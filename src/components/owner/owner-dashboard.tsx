@@ -24,20 +24,26 @@ const statusColors: Record<BookingStatus, string> = {
 };
 
 const statusTextColors: Record<BookingStatus, string> = {
-    pending: 'hsl(var(--accent-foreground))',
-    confirmed: 'hsl(var(--primary-foreground))',
+    pending: 'hsl(48 95% 20%)', // Dark yellow/brown for pending
+    confirmed: 'hsl(210 40% 98%)', // White for confirmed
     cancelled: 'hsl(var(--muted-foreground))',
 }
 
-export default function OwnerDashboard({ bookings }: OwnerDashboardProps) {
+export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashboardProps) {
     const { toast } = useToast();
     const router = useRouter();
+    const [bookings, setBookings] = React.useState(initialBookings);
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [isPanelOpen, setPanelOpen] = React.useState(false);
+
+    React.useEffect(() => {
+        setBookings(initialBookings);
+    }, [initialBookings]);
 
     const bookingDays = bookings
         .filter(b => b.status !== 'cancelled') // Don't show cancelled bookings on the calendar
         .flatMap(booking => {
+            if (!booking.startDate || !booking.endDate) return [];
             const days = eachDayOfInterval({
                 start: startOfDay(new Date(booking.startDate)),
                 end: startOfDay(new Date(booking.endDate))
@@ -69,6 +75,7 @@ export default function OwnerDashboard({ bookings }: OwnerDashboardProps) {
     const handleDayClick = (day: Date) => {
         const bookingForDay = bookings.find(b =>
             b.status !== 'cancelled' &&
+            b.startDate && b.endDate &&
             isWithinInterval(startOfDay(day), {
                 start: startOfDay(new Date(b.startDate)),
                 end: startOfDay(new Date(b.endDate))
