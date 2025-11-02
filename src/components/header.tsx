@@ -15,7 +15,7 @@ export default function Header() {
           <Link href="/" className="mr-6 flex items-center space-x-2">
             <AppIcon className="h-6 w-6" />
             <span className="font-bold sm:inline-block">
-              BookEase Accommodations
+              JMRN Transient HOMES
             </span>
           </Link>
         </div>

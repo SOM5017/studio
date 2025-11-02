@@ -5,7 +5,7 @@ import Header from '@/components/header';
 import { Toaster } from "@/components/ui/toaster"
 
 export const metadata: Metadata = {
-  title: 'BookEase Accommodations',
+  title: 'JMRN Transient HOMES',
   description: 'Mobile Calendar Booking System for Transient Accommodation',
 };
 
