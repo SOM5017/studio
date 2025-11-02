@@ -26,24 +26,29 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
   const [isConfirmationOpen, setConfirmationOpen] = React.useState(false);
   const [newBooking, setNewBooking] = React.useState<Booking | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
+  const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
   const { toast } = useToast();
 
-  const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+  React.useEffect(() => {
+    const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
 
-  const disabledDays = confirmedBookings.reduce((acc: Date[], booking) => {
-    const a = booking.startDate;
-    const b = booking.endDate;
+    const unavailableDates = confirmedBookings.reduce((acc: Date[], booking) => {
+      const a = booking.startDate;
+      const b = booking.endDate;
 
-    if (a && b) {
-        const interval = { start: startOfDay(new Date(a)), end: startOfDay(new Date(b)) };
-        let currentDate = interval.start;
-        while(currentDate <= interval.end) {
-            acc.push(new Date(currentDate));
-            currentDate = addDays(currentDate, 1);
-        }
-    }
-    return acc;
-  }, []);
+      if (a && b) {
+          const interval = { start: startOfDay(new Date(a)), end: startOfDay(new Date(b)) };
+          let currentDate = interval.start;
+          while(currentDate <= interval.end) {
+              acc.push(new Date(currentDate));
+              currentDate = addDays(currentDate, 1);
+          }
+      }
+      return acc;
+    }, []);
+
+    setDisabledDays([{ before: new Date() }, ...unavailableDates]);
+  }, [bookings]);
 
   const handleBookingSubmit = async (values: BookingFormValues) => {
     if (!range?.from || !range?.to) return;
@@ -93,8 +98,8 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
             selected={range}
             onSelect={setRange}
             numberOfMonths={1}
-            disabled={[{ before: new Date() }, ...disabledDays]}
-            modifiers={{ unavailable: disabledDays }}
+            disabled={disabledDays}
+            modifiers={{ unavailable: disabledDays.filter(d => d instanceof Date) as Date[] }}
             modifiersClassNames={{ unavailable: "day-unavailable" }}
             className="rounded-md border"
           />
