@@ -4,14 +4,17 @@ import * as React from 'react';
 import { Booking, BookingStatus } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { isWithinInterval, startOfDay, eachDayOfInterval } from 'date-fns';
+import { isWithinInterval, startOfDay, eachDayOfInterval, format } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
 import { deleteBookingAction, updateBookingStatusAction } from '@/app/actions';
 import { ChangeCredentialsForm } from './change-credentials-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { ShieldCheck } from 'lucide-react';
+import { ShieldCheck, List } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 
 interface OwnerDashboardProps {
     bookings: Booking[];
@@ -27,6 +30,12 @@ const statusTextColors: Record<BookingStatus, string> = {
     pending: 'hsl(48 95% 20%)', // Dark yellow/brown for pending
     confirmed: 'hsl(210 40% 98%)', // White for confirmed
     cancelled: 'hsl(var(--muted-foreground))',
+}
+
+const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
+    pending: 'secondary',
+    confirmed: 'default',
+    cancelled: 'destructive'
 }
 
 export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashboardProps) {
@@ -87,6 +96,11 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
         }
     };
 
+    const handleSelectBooking = (booking: Booking) => {
+        setSelectedBooking(booking);
+        setPanelOpen(true);
+    };
+
     const handleUpdateBooking = async (id: string, status: BookingStatus) => {
         const result = await updateBookingStatusAction(id, status);
         if (result.success && result.booking) {
@@ -108,6 +122,10 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
             toast({ variant: 'destructive', title: "Deletion Failed", description: result.error });
         }
     };
+
+    const sortedBookings = React.useMemo(() => 
+        [...bookings].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
+    [bookings]);
 
     return (
         <>
@@ -134,6 +152,52 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
                             numberOfMonths={1}
                             className="rounded-md border"
                         />
+                    </CardContent>
+                </Card>
+                
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <List className="h-5 w-5" />
+                            <CardTitle className="text-2xl">All Bookings</CardTitle>
+                        </div>
+                        <CardDescription>A complete list of all your bookings.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Guest</TableHead>
+                                    <TableHead>Check-in</TableHead>
+                                    <TableHead>Check-out</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {sortedBookings.length > 0 ? sortedBookings.map((booking) => (
+                                    <TableRow key={booking.id}>
+                                        <TableCell className="font-medium">{booking.fullName}</TableCell>
+                                        <TableCell>{format(new Date(booking.startDate), 'PPP')}</TableCell>
+                                        <TableCell>{format(new Date(booking.endDate), 'PPP')}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={statusBadgeVariants[booking.status]} className="capitalize">
+                                                {booking.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <Button variant="outline" size="sm" onClick={() => handleSelectBooking(booking)}>
+                                                View
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={5} className="text-center h-24">No bookings yet.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
                     </CardContent>
                 </Card>
 
