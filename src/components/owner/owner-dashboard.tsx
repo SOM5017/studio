@@ -20,8 +20,14 @@ interface OwnerDashboardProps {
 const statusColors: Record<BookingStatus, string> = {
     pending: 'hsl(var(--accent))',
     confirmed: 'hsl(var(--primary))',
-    cancelled: 'hsl(var(--destructive))',
+    cancelled: 'hsl(var(--muted))',
 };
+
+const statusTextColors: Record<BookingStatus, string> = {
+    pending: 'hsl(var(--accent-foreground))',
+    confirmed: 'hsl(var(--primary-foreground))',
+    cancelled: 'hsl(var(--muted-foreground))',
+}
 
 export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashboardProps) {
     const [bookings, setBookings] = React.useState(initialBookings);
@@ -34,16 +40,18 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
         setBookings(initialBookings);
     }, [initialBookings]);
 
-    const bookingDays = bookings.flatMap(booking => {
-        const days = eachDayOfInterval({
-            start: startOfDay(new Date(booking.startDate)),
-            end: startOfDay(new Date(booking.endDate))
-        });
-        return days.map(day => ({
-            day,
-            status: booking.status,
-            bookingId: booking.id
-        }));
+    const bookingDays = bookings
+        .filter(b => b.status !== 'cancelled') // Don't show cancelled bookings on the calendar
+        .flatMap(booking => {
+            const days = eachDayOfInterval({
+                start: startOfDay(new Date(booking.startDate)),
+                end: startOfDay(new Date(booking.endDate))
+            });
+            return days.map(day => ({
+                day,
+                status: booking.status,
+                bookingId: booking.id
+            }));
     });
 
     const modifiers = bookingDays.reduce((acc, { day, status }) => {
@@ -55,8 +63,8 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
     }, {} as Record<BookingStatus, Date[]>);
 
     const modifierStyles = Object.keys(statusColors).reduce((acc, status) => {
-        acc[status] = {
-            color: 'hsl(var(--primary-foreground))',
+        acc[status as BookingStatus] = {
+            color: statusTextColors[status as BookingStatus],
             backgroundColor: statusColors[status as BookingStatus],
         };
         return acc;
@@ -64,6 +72,7 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
 
     const handleDayClick = (day: Date) => {
         const bookingForDay = bookings.find(b =>
+            b.status !== 'cancelled' &&
             isWithinInterval(startOfDay(day), {
                 start: startOfDay(new Date(b.startDate)),
                 end: startOfDay(new Date(b.endDate))
@@ -103,11 +112,11 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-2xl md:text-3xl">Owner Dashboard</CardTitle>
-                        <CardDescription>View and manage all your bookings. Tap a date to see details.</CardDescription>
+                        <CardDescription>View and manage all your bookings. Click a colored date to see details.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center gap-6">
                         <div className="flex flex-wrap justify-center gap-4 text-sm mb-4">
-                            {Object.entries(statusColors).map(([status, color]) => (
+                            {Object.entries(statusColors).filter(([status]) => status !== 'cancelled').map(([status, color]) => (
                                 <div key={status} className="flex items-center gap-2">
                                     <span className="h-4 w-4 rounded-full" style={{ backgroundColor: color }}></span>
                                     <span className="capitalize">{status}</span>
