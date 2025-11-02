@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Booking, BookingStatus } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { isWithinInterval, startOfDay, format } from 'date-fns';
+import { isWithinInterval, startOfDay, format, addDays } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
 import { deleteBookingAction, updateBookingStatusAction } from '@/app/actions';
@@ -83,6 +83,27 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
         [...bookings].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
     [bookings]);
 
+    const bookedDays = React.useMemo(() => {
+        return bookings.reduce((acc: { pending: Date[], confirmed: Date[] }, booking) => {
+            if (booking.status === 'cancelled') return acc;
+            
+            const startDate = startOfDay(new Date(booking.startDate));
+            const endDate = startOfDay(new Date(booking.endDate));
+            let currentDate = startDate;
+
+            while(currentDate <= endDate) {
+                if(booking.status === 'pending') {
+                    acc.pending.push(new Date(currentDate));
+                } else if (booking.status === 'confirmed') {
+                    acc.confirmed.push(new Date(currentDate));
+                }
+                currentDate = addDays(currentDate, 1);
+            }
+            
+            return acc;
+        }, { pending: [], confirmed: [] });
+    }, [bookings]);
+
     return (
         <>
             <div className="space-y-6">
@@ -97,6 +118,20 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
                             onDayClick={handleDayClick}
                             numberOfMonths={1}
                             className="rounded-md border"
+                            modifiers={{ 
+                                pending: bookedDays.pending,
+                                confirmed: bookedDays.confirmed 
+                            }}
+                            modifierStyles={{
+                                pending: { 
+                                    backgroundColor: 'hsl(var(--accent))', 
+                                    color: 'hsl(var(--accent-foreground))' 
+                                },
+                                confirmed: { 
+                                    backgroundColor: 'hsl(var(--primary))', 
+                                    color: 'hsl(var(--primary-foreground))' 
+                                },
+                            }}
                         />
                     </CardContent>
                 </Card>
