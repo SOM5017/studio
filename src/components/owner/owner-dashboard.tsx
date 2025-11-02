@@ -18,8 +18,8 @@ interface OwnerDashboardProps {
 }
 
 const statusColors: Record<BookingStatus, string> = {
-    pending: 'hsl(43 25% 56%)', // accent
-    confirmed: 'hsl(209 36% 28%)', // primary
+    pending: 'hsl(48 95% 60%)', // Brighter yellow
+    confirmed: 'hsl(209 90% 65%)', // Brighter blue
     cancelled: 'hsl(var(--muted))',
 };
 
@@ -29,16 +29,11 @@ const statusTextColors: Record<BookingStatus, string> = {
     cancelled: 'hsl(var(--muted-foreground))',
 }
 
-export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashboardProps) {
-    const [bookings, setBookings] = React.useState(initialBookings);
-    const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
-    const [isPanelOpen, setPanelOpen] = React.useState(false);
+export default function OwnerDashboard({ bookings }: OwnerDashboardProps) {
     const { toast } = useToast();
     const router = useRouter();
-
-    React.useEffect(() => {
-        setBookings(initialBookings);
-    }, [initialBookings]);
+    const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
+    const [isPanelOpen, setPanelOpen] = React.useState(false);
 
     const bookingDays = bookings
         .filter(b => b.status !== 'cancelled') // Don't show cancelled bookings on the calendar
