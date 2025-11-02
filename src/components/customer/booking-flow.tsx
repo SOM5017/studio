@@ -15,6 +15,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { Loader2, PartyPopper } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
+import { useRouter } from 'next/navigation';
 
 interface BookingFlowProps {
   bookings: Booking[];
@@ -29,12 +30,10 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
   const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
   const [isClient, setIsClient] = React.useState(false);
   const { toast } = useToast();
+  const router = useRouter();
   
   React.useEffect(() => {
     setIsClient(true);
-  }, []);
-
-  React.useEffect(() => {
     const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
 
     const unavailableDates = confirmedBookings.reduce((acc: Date[], booking) => {
@@ -64,6 +63,7 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
         setNewBooking(result.booking);
         setFormOpen(false);
         setConfirmationOpen(true);
+        router.refresh();
       } else {
         toast({
           variant: 'destructive',
@@ -157,8 +157,8 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
                                 <CardTitle className="text-base">Booking Summary</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
-                                <div><strong>Check-in:</strong> {newBooking?.startDate.toLocaleDateString()}</div>
-                                <div><strong>Check-out:</strong> {newBooking?.endDate.toLocaleDateString()}</div>
+                                <div><strong>Check-in:</strong> {newBooking?.startDate ? new Date(newBooking.startDate).toLocaleDateString() : ''}</div>
+                                <div><strong>Check-out:</strong> {newBooking?.endDate ? new Date(newBooking.endDate).toLocaleDateString() : ''}</div>
                                 <div><strong>Guests:</strong> {newBooking?.numberOfGuests}</div>
                             </CardContent>
                         </Card>
@@ -202,11 +202,4 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
       </Dialog>
     </>
   );
-}
-
-// Sub-component for the booking form
-interface BookingFormProps {
-    range: DateRange;
-    onSubmit: (values: BookingFormValues) => void;
-    isLoading: boolean;
 }

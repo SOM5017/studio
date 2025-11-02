@@ -11,9 +11,10 @@ import { deleteBookingAction, updateBookingStatusAction } from '@/app/actions';
 import { ChangeCredentialsForm } from './change-credentials-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { ShieldCheck } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface OwnerDashboardProps {
-    initialBookings: Booking[];
+    bookings: Booking[];
 }
 
 const statusColors: Record<BookingStatus, string> = {
@@ -22,11 +23,16 @@ const statusColors: Record<BookingStatus, string> = {
     cancelled: 'hsl(var(--destructive))',
 };
 
-export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps) {
+export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashboardProps) {
     const [bookings, setBookings] = React.useState(initialBookings);
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [isPanelOpen, setPanelOpen] = React.useState(false);
     const { toast } = useToast();
+    const router = useRouter();
+
+    React.useEffect(() => {
+        setBookings(initialBookings);
+    }, [initialBookings]);
 
     const bookingDays = bookings.flatMap(booking => {
         const days = eachDayOfInterval({
@@ -72,9 +78,10 @@ export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps)
     const handleUpdateBooking = async (id: string, status: BookingStatus) => {
         const result = await updateBookingStatusAction(id, status);
         if (result.success && result.booking) {
-            setBookings(bookings.map(b => b.id === id ? result.booking! : b));
+            // No longer need to update local state, revalidate will handle it
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
             setPanelOpen(false);
+            router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Update Failed", description: result.error });
         }
@@ -83,9 +90,10 @@ export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps)
     const handleDeleteBooking = async (id: string) => {
         const result = await deleteBookingAction(id);
         if (result.success) {
-            setBookings(bookings.filter(b => b.id !== id));
+            // No longer need to update local state, revalidate will handle it
             toast({ title: "Booking Deleted", description: "The booking has been successfully removed." });
             setPanelOpen(false);
+            router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Deletion Failed", description: result.error });
         }
