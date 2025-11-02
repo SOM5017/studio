@@ -4,7 +4,7 @@ import * as React from 'react';
 import { Booking, BookingStatus } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { isWithinInterval, startOfDay, eachDayOfInterval, format } from 'date-fns';
+import { isWithinInterval, startOfDay, format } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
 import { deleteBookingAction, updateBookingStatusAction } from '@/app/actions';
@@ -36,46 +36,6 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
     React.useEffect(() => {
         setBookings(initialBookings);
     }, [initialBookings]);
-
-    const bookingDays = bookings
-        .filter(b => b.status !== 'cancelled')
-        .flatMap(booking => {
-            if (!booking.startDate || !booking.endDate) return [];
-            const days = eachDayOfInterval({
-                start: startOfDay(new Date(booking.startDate)),
-                end: startOfDay(new Date(booking.endDate))
-            });
-            return days.map(day => ({
-                day,
-                status: booking.status,
-                bookingId: booking.id
-            }));
-    });
-
-    const modifiers: Record<string, Date[]> = bookingDays.reduce((acc, { day, status }) => {
-        if (!acc[status]) {
-            acc[status] = [];
-        }
-        acc[status].push(day);
-        return acc;
-    }, {} as Record<string, Date[]>);
-
-    const modifierStyles: Record<string, React.CSSProperties> = {
-        pending: { 
-            backgroundColor: 'hsl(48 95% 60%)', 
-            color: 'hsl(48 95% 20%)',
-        },
-        confirmed: { 
-            backgroundColor: 'hsl(209 90% 65%)',
-            color: 'hsl(210 40% 98%)',
-        },
-    };
-    
-    const statusColors: Record<string, string> = {
-        pending: modifierStyles.pending.backgroundColor,
-        confirmed: modifierStyles.confirmed.backgroundColor,
-    };
-
 
     const handleDayClick = (day: Date) => {
         const bookingForDay = bookings.find(b =>
@@ -129,22 +89,12 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-2xl md:text-3xl">Owner Dashboard</CardTitle>
-                        <CardDescription>View and manage all your bookings. Click a colored date to see details.</CardDescription>
+                        <CardDescription>View and manage all your bookings. Click a date to see details if a booking exists for it.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center gap-6">
-                        <div className="flex flex-wrap justify-center gap-4 text-sm mb-4">
-                            {Object.entries(statusColors).map(([status, color]) => (
-                                <div key={status} className="flex items-center gap-2">
-                                    <span className="h-4 w-4 rounded-full" style={{ backgroundColor: color }}></span>
-                                    <span className="capitalize">{status}</span>
-                                </div>
-                            ))}
-                        </div>
                         <Calendar
                             mode="single"
                             onDayClick={handleDayClick}
-                            modifiers={modifiers}
-                            modifierStyles={modifierStyles}
                             numberOfMonths={1}
                             className="rounded-md border"
                         />
