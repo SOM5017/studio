@@ -27,7 +27,12 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
   const [newBooking, setNewBooking] = React.useState<Booking | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
+  const [isClient, setIsClient] = React.useState(false);
   const { toast } = useToast();
+  
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   React.useEffect(() => {
     const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
@@ -93,16 +98,22 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
           <CardDescription>Select your desired dates on the calendar. Unavailable dates are crossed out.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          <Calendar
-            mode="range"
-            selected={range}
-            onSelect={setRange}
-            numberOfMonths={1}
-            disabled={disabledDays}
-            modifiers={{ unavailable: disabledDays.filter(d => d instanceof Date) as Date[] }}
-            modifiersClassNames={{ unavailable: "day-unavailable" }}
-            className="rounded-md border"
-          />
+          {isClient ? (
+            <Calendar
+              mode="range"
+              selected={range}
+              onSelect={setRange}
+              numberOfMonths={1}
+              disabled={disabledDays}
+              modifiers={{ unavailable: disabledDays.filter(d => d instanceof Date) as Date[] }}
+              modifiersClassNames={{ unavailable: "day-unavailable" }}
+              className="rounded-md border"
+            />
+          ) : (
+            <div className="rounded-md border p-3">
+              <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
+            </div>
+          )}
           <Button
             onClick={() => setFormOpen(true)}
             disabled={!range?.from || !range?.to}
