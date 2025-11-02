@@ -18,8 +18,8 @@ interface OwnerDashboardProps {
 }
 
 const statusColors: Record<BookingStatus, string> = {
-    pending: 'hsl(var(--accent))',
-    confirmed: 'hsl(var(--primary))',
+    pending: 'hsl(43 25% 56%)', // accent
+    confirmed: 'hsl(209 36% 28%)', // primary
     cancelled: 'hsl(var(--muted))',
 };
 
@@ -66,6 +66,7 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
         acc[status as BookingStatus] = {
             color: statusTextColors[status as BookingStatus],
             backgroundColor: statusColors[status as BookingStatus],
+            fontWeight: 'bold',
         };
         return acc;
     }, {} as Record<string, React.CSSProperties>);
