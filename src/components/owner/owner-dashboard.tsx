@@ -122,15 +122,9 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
                                 pending: bookedDays.pending,
                                 confirmed: bookedDays.confirmed 
                             }}
-                            modifierStyles={{
-                                pending: { 
-                                    backgroundColor: 'hsl(var(--accent))', 
-                                    color: 'hsl(var(--accent-foreground))' 
-                                },
-                                confirmed: { 
-                                    backgroundColor: 'hsl(var(--primary))', 
-                                    color: 'hsl(var(--primary-foreground))' 
-                                },
+                            modifiersClassNames={{
+                                pending: "bg-accent text-accent-foreground",
+                                confirmed: "bg-primary text-primary-foreground",
                             }}
                         />
                     </CardContent>
