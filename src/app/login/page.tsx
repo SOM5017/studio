@@ -20,7 +20,7 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
-    const [state, formAction] = useActionState(loginAction, undefined);
+    const [state, formAction] = useActionState(loginAction, { success: false, error: "" });
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -41,11 +41,12 @@ export default function LoginPage() {
                                 type="text"
                                 placeholder="admin"
                                 required
+                                defaultValue="admin"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="password">Password</Label>
-                            <Input id="password" name="password" type="password" required />
+                            <Input id="password" name="password" type="password" required defaultValue="admin" />
                         </div>
                         {state?.error && (
                              <p className="text-sm text-destructive">{state.error}</p>

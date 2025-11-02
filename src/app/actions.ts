@@ -98,8 +98,8 @@ const loginSchema = z.object({
     password: z.string(),
 });
 
-export async function loginAction(data: z.infer<typeof loginSchema>) {
-    const validation = loginSchema.safeParse(data);
+export async function loginAction(prevState: any, data: FormData) {
+    const validation = loginSchema.safeParse(Object.fromEntries(data));
     if (!validation.success) {
         return { success: false, error: "Invalid data" };
     }
