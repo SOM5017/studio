@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from 'zod';
-import { addBooking, deleteBooking, updateBooking } from '@/lib/data';
+import { addBooking, deleteBooking, updateBooking, getCredentials, setCredentials } from '@/lib/data';
 import { Booking, BookingStatus, paymentMethods } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { detectFraudulentBookings, DetectFraudulentBookingsInput } from '@/ai/flows/detect-fraudulent-bookings';
@@ -105,8 +105,9 @@ export async function loginAction(data: z.infer<typeof loginSchema>) {
     }
 
     const { username, password } = validation.data;
+    const credentials = getCredentials();
 
-    if (username === 'admin' && password === 'admin') {
+    if (username === credentials.username && password === credentials.password) {
         const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-super-secret-key-that-is-at-least-32-chars');
         const token = await new SignJWT({ username, role: 'admin' })
             .setProtectedHeader({ alg: 'HS256' })
@@ -130,4 +131,27 @@ export async function loginAction(data: z.infer<typeof loginSchema>) {
 export async function logoutAction() {
     cookies().delete('session');
     redirect('/login');
+}
+
+const changeCredentialsSchema = z.object({
+  newUsername: z.string().min(1),
+  newPassword: z.string().min(1),
+});
+
+export async function changeCredentialsAction(data: z.infer<typeof changeCredentialsSchema>) {
+  const validation = changeCredentialsSchema.safeParse(data);
+  if (!validation.success) {
+    return { success: false, error: "Invalid data provided." };
+  }
+  
+  try {
+    setCredentials(validation.data.newUsername, validation.data.newPassword);
+    // In a real app, you might want to force a re-login here
+    // for now we just update and let the existing session continue until it expires.
+    // To force re-login, we could delete the cookie:
+    // cookies().delete('session');
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: "Failed to update credentials." };
+  }
 }

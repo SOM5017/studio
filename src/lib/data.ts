@@ -43,6 +43,24 @@ let bookings: Booking[] = [
   },
 ];
 
+let credentials = {
+    username: 'admin',
+    password: 'admin',
+};
+
+export function getCredentials() {
+    return credentials;
+}
+
+export function setCredentials(newUsername?: string, newPassword?: string) {
+    if (newUsername) {
+        credentials.username = newUsername;
+    }
+    if (newPassword) {
+        credentials.password = newPassword;
+    }
+}
+
 export async function getBookings(): Promise<Booking[]> {
   return Promise.resolve(bookings);
 }
