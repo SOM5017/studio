@@ -78,7 +78,6 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
     const handleUpdateBooking = async (id: string, status: BookingStatus) => {
         const result = await updateBookingStatusAction(id, status);
         if (result.success && result.booking) {
-            // No longer need to update local state, revalidate will handle it
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
             setPanelOpen(false);
             router.refresh();
@@ -90,7 +89,6 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
     const handleDeleteBooking = async (id: string) => {
         const result = await deleteBookingAction(id);
         if (result.success) {
-            // No longer need to update local state, revalidate will handle it
             toast({ title: "Booking Deleted", description: "The booking has been successfully removed." });
             setPanelOpen(false);
             router.refresh();
