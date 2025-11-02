@@ -20,18 +20,6 @@ interface OwnerDashboardProps {
     bookings: Booking[];
 }
 
-const statusColors: Record<BookingStatus, string> = {
-    pending: 'hsl(48 95% 60%)', // Brighter yellow
-    confirmed: 'hsl(209 90% 65%)', // Brighter blue
-    cancelled: 'hsl(var(--muted))',
-};
-
-const statusTextColors: Record<BookingStatus, string> = {
-    pending: 'hsl(48 95% 20%)', // Dark yellow/brown for pending
-    confirmed: 'hsl(210 40% 98%)', // White for confirmed
-    cancelled: 'hsl(var(--muted-foreground))',
-}
-
 const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
     pending: 'secondary',
     confirmed: 'default',
@@ -50,7 +38,7 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
     }, [initialBookings]);
 
     const bookingDays = bookings
-        .filter(b => b.status !== 'cancelled') // Don't show cancelled bookings on the calendar
+        .filter(b => b.status !== 'cancelled')
         .flatMap(booking => {
             if (!booking.startDate || !booking.endDate) return [];
             const days = eachDayOfInterval({
@@ -64,22 +52,30 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
             }));
     });
 
-    const modifiers = bookingDays.reduce((acc, { day, status }) => {
+    const modifiers: Record<string, Date[]> = bookingDays.reduce((acc, { day, status }) => {
         if (!acc[status]) {
             acc[status] = [];
         }
         acc[status].push(day);
         return acc;
-    }, {} as Record<BookingStatus, Date[]>);
+    }, {} as Record<string, Date[]>);
 
-    const modifierStyles = Object.keys(statusColors).reduce((acc, status) => {
-        acc[status as BookingStatus] = {
-            color: statusTextColors[status as BookingStatus],
-            backgroundColor: statusColors[status as BookingStatus],
-            fontWeight: 'bold',
-        };
-        return acc;
-    }, {} as Record<string, React.CSSProperties>);
+    const modifierStyles: Record<string, React.CSSProperties> = {
+        pending: { 
+            backgroundColor: 'hsl(48 95% 60%)', 
+            color: 'hsl(48 95% 20%)',
+        },
+        confirmed: { 
+            backgroundColor: 'hsl(209 90% 65%)',
+            color: 'hsl(210 40% 98%)',
+        },
+    };
+    
+    const statusColors: Record<string, string> = {
+        pending: modifierStyles.pending.backgroundColor,
+        confirmed: modifierStyles.confirmed.backgroundColor,
+    };
+
 
     const handleDayClick = (day: Date) => {
         const bookingForDay = bookings.find(b =>
@@ -137,7 +133,7 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
                     </CardHeader>
                     <CardContent className="flex flex-col items-center gap-6">
                         <div className="flex flex-wrap justify-center gap-4 text-sm mb-4">
-                            {Object.entries(statusColors).filter(([status]) => status !== 'cancelled').map(([status, color]) => (
+                            {Object.entries(statusColors).map(([status, color]) => (
                                 <div key={status} className="flex items-center gap-2">
                                     <span className="h-4 w-4 rounded-full" style={{ backgroundColor: color }}></span>
                                     <span className="capitalize">{status}</span>
