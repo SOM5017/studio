@@ -6,6 +6,9 @@ import { Booking, BookingStatus, paymentMethods } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
 import { detectFraudulentBookings, DetectFraudulentBookingsInput } from '@/ai/flows/detect-fraudulent-bookings';
 import { format } from 'date-fns';
+import { SignJWT } from 'jose';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 const bookingSchema = z.object({
   fullName: z.string().min(2),
@@ -87,4 +90,44 @@ export async function deleteBookingAction(id: string) {
     } catch (error) {
         return { success: false, error: 'Failed to delete booking.' };
     }
+}
+
+
+const loginSchema = z.object({
+    username: z.string(),
+    password: z.string(),
+});
+
+export async function loginAction(data: z.infer<typeof loginSchema>) {
+    const validation = loginSchema.safeParse(data);
+    if (!validation.success) {
+        return { success: false, error: "Invalid data" };
+    }
+
+    const { username, password } = validation.data;
+
+    if (username === 'admin' && password === 'admin') {
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-super-secret-key-that-is-at-least-32-chars');
+        const token = await new SignJWT({ username, role: 'admin' })
+            .setProtectedHeader({ alg: 'HS256' })
+            .setIssuedAt()
+            .setExpirationTime('1h')
+            .sign(secret);
+
+        cookies().set('session', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 60 * 60, // 1 hour
+            path: '/',
+        });
+
+        redirect('/owner');
+    }
+
+    return { success: false, error: "Invalid username or password" };
+}
+
+export async function logoutAction() {
+    cookies().delete('session');
+    redirect('/login');
 }
