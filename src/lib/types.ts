@@ -10,6 +10,7 @@ export interface Booking {
   endDate: Date;
   fullName: string;
   mobileNumber: string;
+  address: string;
   numberOfGuests: number;
   namesOfGuests: string;
   paymentMethod: PaymentMethod;

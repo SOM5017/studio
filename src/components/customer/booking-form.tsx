@@ -23,6 +23,7 @@ import { Loader2 } from 'lucide-react';
 const formSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
   mobileNumber: z.string().regex(/^(09|\+639)\d{9}$/, { message: 'Please enter a valid PH mobile number.' }),
+  address: z.string().min(5, { message: 'Address must be at least 5 characters.' }),
   numberOfGuests: z.coerce.number().min(1, { message: 'At least one guest is required.' }),
   namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
   paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
@@ -42,6 +43,7 @@ export function BookingForm({ range, onSubmit, isLoading }: BookingFormProps) {
     defaultValues: {
       fullName: '',
       mobileNumber: '',
+      address: '',
       numberOfGuests: 1,
       namesOfGuests: '',
     },
@@ -75,6 +77,19 @@ export function BookingForm({ range, onSubmit, isLoading }: BookingFormProps) {
               <FormLabel>Mobile Number</FormLabel>
               <FormControl>
                 <Input placeholder="09171234567" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="address"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Address</FormLabel>
+              <FormControl>
+                <Input placeholder="123 Main St, Metro Manila" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

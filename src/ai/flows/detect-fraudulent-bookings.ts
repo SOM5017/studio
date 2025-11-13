@@ -17,6 +17,7 @@ const DetectFraudulentBookingsInputSchema = z.object({
     .describe('The duration of the stay (start and end date).'),
   fullName: z.string().describe('The full name of the guest.'),
   mobileNumber: z.string().describe('The mobile number of the guest.'),
+  address: z.string().describe('The address of the guest.'),
   numberOfGuests: z.number().describe('The number of guests.'),
   namesOfGuests: z.string().describe('The names of the guests.'),
   paymentMethod: z.string().describe('The payment method used for the booking.'),
@@ -52,14 +53,16 @@ const prompt = ai.definePrompt({
 You will analyze the booking details provided and determine if the booking is potentially fraudulent.
 
 Consider factors such as:
-- Inconsistencies in the provided information
+- Inconsistencies in the provided information (e.g. mismatched name and address)
 - Unusual booking patterns
 - Suspicious payment methods
+- Vague or incomplete address information
 
 Booking Details:
 Duration of Stay: {{{durationOfStay}}}
 Full Name: {{{fullName}}}
 Mobile Number: {{{mobileNumber}}}
+Address: {{{address}}}
 Number of Guests: {{{numberOfGuests}}}
 Names of Guests: {{{namesOfGuests}}}
 Payment Method: {{{paymentMethod}}}

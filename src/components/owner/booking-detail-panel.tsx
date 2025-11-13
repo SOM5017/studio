@@ -89,6 +89,10 @@ export function BookingDetailPanel({
             </div>
           </div>
           <div>
+            <p className="font-medium text-foreground">Address</p>
+            <p className="whitespace-pre-wrap">{booking.address}</p>
+          </div>
+          <div>
             <p className="font-medium text-foreground">Guest Names</p>
             <p className="whitespace-pre-wrap">{booking.namesOfGuests}</p>
           </div>

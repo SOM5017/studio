@@ -13,6 +13,7 @@ import { redirect } from 'next/navigation';
 const bookingSchema = z.object({
   fullName: z.string().min(2),
   mobileNumber: z.string(),
+  address: z.string().min(5),
   numberOfGuests: z.coerce.number().min(1),
   namesOfGuests: z.string().min(2),
   paymentMethod: z.enum(paymentMethods),
@@ -33,6 +34,7 @@ export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
     durationOfStay: `${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`,
     fullName: bookingData.fullName,
     mobileNumber: bookingData.mobileNumber,
+    address: bookingData.address,
     numberOfGuests: bookingData.numberOfGuests,
     namesOfGuests: bookingData.namesOfGuests,
     paymentMethod: bookingData.paymentMethod,
