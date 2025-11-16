@@ -32,7 +32,7 @@ export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
 
   // Prepare input for AI fraud detection
   const aiInput: DetectFraudulentBookingsInput = {
-    durationOfStay: `${format(new Date(startDate), 'PPP')} to ${format(new Date(endDate), 'PPP')}`,
+    durationOfStay: `${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`,
     fullName: bookingData.fullName,
     mobileNumber: bookingData.mobileNumber,
     address: bookingData.address,
@@ -45,15 +45,17 @@ export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
     // Call fraud detection flow
     const fraudResult = await detectFraudulentBookings(aiInput);
 
+    // This is the complete object that matches Omit<Booking, 'id'>
     const newBookingData: Omit<Booking, 'id'> = {
       ...bookingData,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      status: 'pending',
+      status: 'pending', // Set initial status
       isFraudulent: fraudResult.isFraudulent,
       fraudulentReason: fraudResult.fraudulentReason,
     };
-
+    
+    // addBooking expects the full object
     const newBooking = await addBooking(newBookingData);
     
     revalidatePath('/');
