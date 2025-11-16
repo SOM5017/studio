@@ -24,6 +24,7 @@ const bookingSchema = z.object({
 export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
   const validation = bookingSchema.safeParse(data);
   if (!validation.success) {
+    // This should ideally not happen with client-side validation
     return { success: false, error: "Invalid data provided." };
   }
 

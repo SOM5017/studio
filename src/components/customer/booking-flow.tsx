@@ -54,7 +54,7 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
     setDisabledDays([{ before: new Date() }, ...unavailableDates]);
   }, [bookings]);
 
-  const handleBookingSubmit = async (values: BookingFormValues) => {
+  const handleBookingSubmit = async (values: Omit<BookingFormValues, 'startDate' | 'endDate'>) => {
     if (!range?.from || !range?.to) return;
     setIsLoading(true);
     try {

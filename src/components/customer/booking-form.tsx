@@ -27,19 +27,21 @@ const formSchema = z.object({
   numberOfGuests: z.coerce.number().min(1, { message: 'At least one guest is required.' }),
   namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
   paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
+  startDate: z.date(),
+  endDate: z.date(),
 });
 
 export type BookingFormValues = z.infer<typeof formSchema>;
 
 interface BookingFormProps {
     range: DateRange;
-    onSubmit: (values: BookingFormValues) => void;
+    onSubmit: (values: Omit<BookingFormValues, 'startDate' | 'endDate'>) => void;
     isLoading: boolean;
 }
 
 export function BookingForm({ range, onSubmit, isLoading }: BookingFormProps) {
-  const form = useForm<BookingFormValues>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<Omit<BookingFormValues, 'startDate' | 'endDate'>>({
+    resolver: zodResolver(formSchema.omit({ startDate: true, endDate: true})),
     defaultValues: {
       fullName: '',
       mobileNumber: '',
