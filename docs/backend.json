@@ -1,0 +1,246 @@
+{
+  "entities": {
+    "Booking": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Booking",
+      "type": "object",
+      "description": "Represents a booking made by a customer for a transient accommodation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the booking."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. (Relationship: Customer 1:N Booking)"
+        },
+        "accommodationId": {
+          "type": "string",
+          "description": "Reference to Accommodation. (Relationship: Accommodation 1:N Booking)"
+        },
+        "startDate": {
+          "type": "string",
+          "description": "The start date of the booking.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "The end date of the booking.",
+          "format": "date-time"
+        },
+        "numberOfGuests": {
+          "type": "number",
+          "description": "The number of guests for the booking."
+        },
+        "guestNames": {
+          "type": "string",
+          "description": "The names of the guests for the booking."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "The method of payment used for the booking (GCash or Cash)."
+        },
+        "paymentStatus": {
+          "type": "string",
+          "description": "The status of the payment (Pending, Paid via GCash, Cash on Arrival, Cancelled)."
+        },
+        "bookingStatus": {
+          "type": "string",
+          "description": "The status of the booking (pending, confirmed, cancelled)."
+        },
+        "bookingDate": {
+          "type": "string",
+          "description": "The date the booking was created",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "customerId",
+        "accommodationId",
+        "startDate",
+        "endDate",
+        "numberOfGuests",
+        "guestNames",
+        "paymentMethod",
+        "paymentStatus",
+        "bookingStatus",
+        "bookingDate"
+      ]
+    },
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Represents a customer who makes bookings.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the customer."
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The full name of the customer."
+        },
+        "mobileNumber": {
+          "type": "string",
+          "description": "The mobile number of the customer."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the customer.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "mobileNumber"
+      ]
+    },
+    "Accommodation": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Accommodation",
+      "type": "object",
+      "description": "Represents a transient accommodation that can be booked.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the accommodation."
+        },
+        "ownerId": {
+          "type": "string",
+          "description": "Reference to Owner. (Relationship: Owner 1:N Accommodation)"
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the accommodation."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the accommodation."
+        },
+        "gcashNumber": {
+          "type": "string",
+          "description": "The GCash number for receiving payments."
+        }
+      },
+      "required": [
+        "id",
+        "ownerId",
+        "name",
+        "description",
+        "gcashNumber"
+      ]
+    },
+    "Owner": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Owner",
+      "type": "object",
+      "description": "Represents the owner of the accommodation.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the owner."
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The full name of the owner."
+        },
+        "mobileNumber": {
+          "type": "string",
+          "description": "The mobile number of the owner."
+        },
+        "email": {
+          "type": "string",
+          "description": "The email address of the owner.",
+          "format": "email"
+        }
+      },
+      "required": [
+        "id",
+        "fullName",
+        "mobileNumber"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/customers/{customerId}",
+        "definition": {
+          "entityName": "Customer",
+          "schema": {
+            "$ref": "#/backend/entities/Customer"
+          },
+          "description": "Stores customer data. Path-based ownership for user privacy.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "The unique identifier for the customer."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/owners/{ownerId}",
+        "definition": {
+          "entityName": "Owner",
+          "schema": {
+            "$ref": "#/backend/entities/Owner"
+          },
+          "description": "Stores owner data. Path-based ownership for owner privacy.",
+          "params": [
+            {
+              "name": "ownerId",
+              "description": "The unique identifier for the accommodation owner."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/accommodations/{accommodationId}",
+        "definition": {
+          "entityName": "Accommodation",
+          "schema": {
+            "$ref": "#/backend/entities/Accommodation"
+          },
+          "description": "Stores accommodation data. Includes 'ownerId' to define the owner.",
+          "params": [
+            {
+              "name": "accommodationId",
+              "description": "The unique identifier for the accommodation."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/accommodations/{accommodationId}/bookings/{bookingId}",
+        "definition": {
+          "entityName": "Booking",
+          "schema": {
+            "$ref": "#/backend/entities/Booking"
+          },
+          "description": "Stores booking data for each accommodation. Includes denormalized 'customerId' and accommodation 'ownerId' for authorization independence. All booking documents also have their accommodationId stored.",
+          "params": [
+            {
+              "name": "accommodationId",
+              "description": "The unique identifier for the accommodation."
+            },
+            {
+              "name": "bookingId",
+              "description": "The unique identifier for the booking."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the BookEase Accommodations app, focusing on security, scalability, and ease of debugging. The design prioritizes Authorization Independence by denormalizing relevant data, ensuring that security rules can be evaluated without relying on `get()` calls. This prevents issues with atomic operations (transactions/batches) and improves debuggability. The structure also supports the required QAPs by segregating data based on ownership and access control needs.\n\nSpecifically:\n\n*   **Customers**: Each customer has their own document in `/customers/{customerId}`. This supports path-based ownership, making it straightforward to secure customer data.\n*   **Owners**: Similar to customers, owners are stored in `/owners/{ownerId}`.\n*   **Accommodations**: Accommodations are stored in `/accommodations/{accommodationId}`. Each accommodation includes the `ownerId`, facilitating the enforcement of ownership rules.\n*   **Bookings**: Bookings are stored as subcollections under the respective accommodation: `/accommodations/{accommodationId}/bookings/{bookingId}`. The `customerId` and accommodation `ownerId` are denormalized into each booking document to enforce security rules (only the customer who made the booking and the accommodation owner can view/modify the booking). This denormalization enables Authorization Independence, eliminating the need for `get()` calls in security rules to check the customer or owner associated with the booking.\n\nThis structure ensures that each collection has a homogeneous security posture, avoiding the mixing of data with different access needs. The path-based ownership and membership models facilitate simple and efficient security rules, enhancing the overall security and maintainability of the application."
+  }
+}
