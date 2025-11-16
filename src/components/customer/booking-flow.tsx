@@ -29,12 +29,18 @@ export default function BookingFlow() {
   const [isConfirmationOpen, setConfirmationOpen] = React.useState(false);
   const [newBooking, setNewBooking] = React.useState<Booking | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([{ before: new Date() }]);
+  const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
   const { toast } = useToast();
   const router = useRouter();
   
   React.useEffect(() => {
-    if (!bookings) return;
+    // This logic now runs only on the client, after hydration.
+    const today = new Date();
+    if (!bookings) {
+      // Set initial disabled days (past dates) even if bookings haven't loaded
+      setDisabledDays([{ before: today }]);
+      return;
+    };
 
     const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
 
@@ -53,7 +59,7 @@ export default function BookingFlow() {
       return acc;
     }, []);
 
-    setDisabledDays([{ before: new Date() }, ...unavailableDates]);
+    setDisabledDays([{ before: today }, ...unavailableDates]);
   }, [bookings]);
 
   const handleBookingSubmit = async (values: BookingFormValues) => {
@@ -100,7 +106,7 @@ export default function BookingFlow() {
           <CardDescription>Select your desired dates on the calendar. Unavailable dates are crossed out.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          {isLoadingBookings ? (
+          {isLoadingBookings && disabledDays.length === 0 ? (
             <div className="rounded-md border p-3">
               <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
             </div>
@@ -118,7 +124,7 @@ export default function BookingFlow() {
           )}
           <Button
             onClick={() => setFormOpen(true)}
-            disabled={!range?.from || !range?.to || isLoadingBookings}
+            disabled={!range?.from || !range?.to || (isLoadingBookings && disabledDays.length === 0)}
             size="lg"
             className="w-full sm:w-auto"
           >
