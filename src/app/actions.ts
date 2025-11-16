@@ -9,6 +9,7 @@ import { format } from 'date-fns';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { randomUUID } from 'crypto';
 
 const bookingSchema = z.object({
   fullName: z.string().min(2),
@@ -45,7 +46,8 @@ export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
     // Call fraud detection flow
     const fraudResult = await detectFraudulentBookings(aiInput);
 
-    const newBookingData: Omit<Booking, 'id'> = {
+    const newBookingData: Booking = {
+      id: randomUUID(),
       fullName: bookingData.fullName,
       mobileNumber: bookingData.mobileNumber,
       address: bookingData.address,

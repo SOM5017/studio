@@ -1,18 +1,46 @@
-
+import { promises as fs } from 'fs';
+import path from 'path';
 import { Booking } from '@/lib/types';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getFirestore, Timestamp, Firestore } from 'firebase/firestore';
-import { app } from '@/firebase/config';
-
-let db: Firestore;
-if (app) {
-    db = getFirestore(app);
-}
 
 // In-memory store for credentials for the demo.
 let credentials = {
     username: 'admin',
     password: 'admin',
 };
+
+// Path to the bookings data file
+const dataFilePath = path.join(process.cwd(), 'src', 'lib', 'bookings.json');
+
+async function readData(): Promise<Booking[]> {
+  try {
+    const fileContent = await fs.readFile(dataFilePath, 'utf-8');
+    const bookings = JSON.parse(fileContent);
+    // When reading from JSON, dates are strings, so we need to convert them back to Date objects.
+    return bookings.map((booking: any) => ({
+      ...booking,
+      startDate: new Date(booking.startDate),
+      endDate: new Date(booking.endDate),
+    }));
+  } catch (error) {
+    // If the file does not exist, return an empty array.
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return [];
+    }
+    console.error('Failed to read bookings:', error);
+    // In case of other errors, return an empty array to prevent app crashes
+    return [];
+  }
+}
+
+async function writeData(data: Booking[]): Promise<void> {
+  try {
+    // Dates will be converted to ISO strings during JSON serialization, which is fine.
+    await fs.writeFile(dataFilePath, JSON.stringify(data, null, 2));
+  } catch (error) {
+    console.error('Failed to write bookings:', error);
+    throw new Error('Could not write to data file.');
+  }
+}
 
 export function getCredentials() {
     return credentials;
@@ -28,87 +56,40 @@ export function setCredentials(newUsername?: string, newPassword?: string) {
 }
 
 export async function getBookings(): Promise<Booking[]> {
-  if (!db) {
-    console.log("Firestore is not initialized.");
-    return [];
-  }
-  try {
-    const querySnapshot = await getDocs(collection(db, "bookings"));
-    const bookings = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        // Ensure Timestamps are converted to Dates
-        const startDate = data.startDate instanceof Timestamp ? data.startDate.toDate() : new Date(data.startDate);
-        const endDate = data.endDate instanceof Timestamp ? data.endDate.toDate() : new Date(data.endDate);
-        
-        return {
-            id: doc.id,
-            ...data,
-            startDate,
-            endDate,
-        } as Booking;
-    });
-    return bookings;
-  } catch (error) {
-    console.error("Failed to read bookings:", error);
-    // In case of error, return an empty array to prevent app crashes
-    return [];
-  }
+    return await readData();
 }
 
-export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    if (!db) {
-        throw new Error("Firestore is not initialized.");
-    }
-    try {
-        const bookingWithTimestamps = {
-            ...booking,
-            startDate: Timestamp.fromDate(new Date(booking.startDate)),
-            endDate: Timestamp.fromDate(new Date(booking.endDate)),
-        };
-        const docRef = await addDoc(collection(db, "bookings"), bookingWithTimestamps);
-        return { ...booking, id: docRef.id };
-    } catch (error) {
-        console.error("Error adding booking: ", error);
-        throw error;
-    }
+export async function addBooking(booking: Booking): Promise<Booking> {
+    const bookings = await readData();
+    bookings.push(booking);
+    await writeData(bookings);
+    return booking;
 }
 
 export async function updateBooking(id: string, updatedBooking: Partial<Booking>): Promise<Booking | null> {
-    if (!db) {
-        throw new Error("Firestore is not initialized.");
-    }
-    try {
-        const bookingRef = doc(db, "bookings", id);
-        
-        const updateData: any = { ...updatedBooking };
+    const bookings = await readData();
+    const bookingIndex = bookings.findIndex(b => b.id === id);
 
-        if (updatedBooking.startDate) {
-            updateData.startDate = Timestamp.fromDate(new Date(updatedBooking.startDate));
-        }
-        if (updatedBooking.endDate) {
-            updateData.endDate = Timestamp.fromDate(new Date(updatedBooking.endDate));
-        }
-
-        await updateDoc(bookingRef, updateData);
-        
-        // This is inefficient, but getBookings() is simple. For a real app, you'd getDoc(bookingRef).
-        const bookings = await getBookings(); 
-        return bookings.find(b => b.id === id) || null;
-    } catch (error) {
-        console.error("Error updating booking: ", error);
-        throw error;
+    if (bookingIndex === -1) {
+        return null;
     }
+
+    const bookingToUpdate = bookings[bookingIndex];
+    const newBooking = { ...bookingToUpdate, ...updatedBooking };
+    bookings[bookingIndex] = newBooking;
+
+    await writeData(bookings);
+    return newBooking;
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
-    if (!db) {
-        throw new Error("Firestore is not initialized.");
-    }
-    try {
-        await deleteDoc(doc(db, "bookings", id));
+    let bookings = await readData();
+    const initialLength = bookings.length;
+    bookings = bookings.filter(b => b.id !== id);
+
+    if (bookings.length < initialLength) {
+        await writeData(bookings);
         return true;
-    } catch (error) {
-        console.error("Error deleting booking: ", error);
-        return false;
     }
+    return false;
 }
