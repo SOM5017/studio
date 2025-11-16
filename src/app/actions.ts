@@ -10,19 +10,25 @@ import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-const bookingSchema = z.object({
-  fullName: z.string().min(2),
-  mobileNumber: z.string(),
-  address: z.string().min(5),
-  numberOfGuests: z.coerce.number().min(1),
-  namesOfGuests: z.string().min(2),
-  paymentMethod: z.enum(paymentMethods),
+// Schema for the form data ONLY
+const bookingFormSchema = z.object({
+  fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
+  mobileNumber: z.string().regex(/^(09|\+639)\d{9}$/, { message: 'Please enter a valid PH mobile number.' }),
+  address: z.string().min(5, { message: 'Address must be at least 5 characters.' }),
+  numberOfGuests: z.coerce.number().min(1, { message: 'At least one guest is required.' }),
+  namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
+  paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
+});
+
+// Combined schema for the action, including dates
+const bookingActionSchema = bookingFormSchema.extend({
   startDate: z.date(),
   endDate: z.date(),
 });
 
-export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
-  const validation = bookingSchema.safeParse(data);
+
+export async function createBookingAction(data: z.infer<typeof bookingActionSchema>) {
+  const validation = bookingActionSchema.safeParse(data);
   if (!validation.success) {
     // This should ideally not happen with client-side validation
     return { success: false, error: "Invalid data provided." };
