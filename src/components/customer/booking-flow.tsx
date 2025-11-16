@@ -29,7 +29,7 @@ export default function BookingFlow() {
   const [isConfirmationOpen, setConfirmationOpen] = React.useState(false);
   const [newBooking, setNewBooking] = React.useState<Booking | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
-  const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
+  const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([{ before: new Date() }]);
   const { toast } = useToast();
   const router = useRouter();
   
