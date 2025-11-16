@@ -11,16 +11,14 @@ service cloud.firestore {
     // Rules for the 'bookings' collection
     match /bookings/{bookingId} {
       // Anyone can create a booking, as this is a public-facing action.
-      // We rely on AI for fraud detection post-creation.
       allow create: if true;
 
-      // Any signed-in user (implying an admin/owner in this app's context)
-      // can read, update, or delete any booking.
-      // In a multi-tenant app, this would be restricted to the owner of the accommodation.
-      allow read, update, delete: if isSignedIn();
+      // Allow public read access for calendar availability, but restrict writes to signed-in admins.
+      allow read: if true;
+      allow update, delete: if isSignedIn();
       
-      // Public listing of all bookings is disallowed for security.
-      allow list: if false;
+      // Allow public listing of bookings for the calendar.
+      allow list: if true;
     }
   }
 }
