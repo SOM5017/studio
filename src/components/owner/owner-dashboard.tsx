@@ -18,10 +18,6 @@ import { Button } from '../ui/button';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
 
-interface OwnerDashboardProps {
-    bookings: Booking[];
-}
-
 const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
     pending: 'secondary',
     confirmed: 'default',
@@ -37,6 +33,11 @@ export default function OwnerDashboard() {
     const router = useRouter();
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [isPanelOpen, setPanelOpen] = React.useState(false);
+    const [isMounted, setIsMounted] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const handleDayClick = (day: Date) => {
         if (!bookings) return;
@@ -109,6 +110,38 @@ export default function OwnerDashboard() {
         }, { pending: [], confirmed: [] });
     }, [bookings]);
 
+    if (!isMounted) {
+        return (
+            <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-2xl md:text-3xl">Owner Dashboard</CardTitle>
+                        <CardDescription>View and manage all your bookings. Click a date to see details if a booking exists for it.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-col items-center gap-6">
+                        <div className="rounded-md border p-3">
+                            <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-2">
+                            <List className="h-5 w-5" />
+                            <CardTitle className="text-2xl">All Bookings</CardTitle>
+                        </div>
+                        <CardDescription>A complete list of all your bookings.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="flex justify-center items-center h-24">
+                            <Loader2 className="h-6 w-6 animate-spin" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+    
     return (
         <>
             <div className="space-y-6">
@@ -189,7 +222,6 @@ export default function OwnerDashboard() {
                                     )}
                                 </TableBody>
                             </Table>
-                        </Table>
                         )}
                     </CardContent>
                 </Card>
