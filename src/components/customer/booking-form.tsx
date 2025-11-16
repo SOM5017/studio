@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
-import { PaymentMethod, paymentMethods } from '@/lib/types';
+import { paymentMethods } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
@@ -27,21 +27,19 @@ const formSchema = z.object({
   numberOfGuests: z.coerce.number().min(1, { message: 'At least one guest is required.' }),
   namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
   paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
-  startDate: z.date(),
-  endDate: z.date(),
 });
 
 export type BookingFormValues = z.infer<typeof formSchema>;
 
 interface BookingFormProps {
     range: DateRange;
-    onSubmit: (values: Omit<BookingFormValues, 'startDate' | 'endDate'>) => void;
+    onSubmit: (values: BookingFormValues) => void;
     isLoading: boolean;
 }
 
 export function BookingForm({ range, onSubmit, isLoading }: BookingFormProps) {
-  const form = useForm<Omit<BookingFormValues, 'startDate' | 'endDate'>>({
-    resolver: zodResolver(formSchema.omit({ startDate: true, endDate: true})),
+  const form = useForm<BookingFormValues>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: '',
       mobileNumber: '',
