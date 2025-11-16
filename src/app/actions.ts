@@ -32,7 +32,7 @@ export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
 
   // Prepare input for AI fraud detection
   const aiInput: DetectFraudulentBookingsInput = {
-    durationOfStay: `${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`,
+    durationOfStay: `${format(new Date(startDate), 'PPP')} to ${format(new Date(endDate), 'PPP')}`,
     fullName: bookingData.fullName,
     mobileNumber: bookingData.mobileNumber,
     address: bookingData.address,
