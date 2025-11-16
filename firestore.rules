@@ -1,0 +1,23 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /bookings/{bookingId} {
+      // Allow anyone to create a booking (e.g., customers)
+      allow create: if true;
+      
+      // Allow anyone to read bookings (for simplicity in this demo)
+      // In a real app, you'd restrict this (e.g., only owner or specific users)
+      allow read: if true;
+
+      // Allow anyone to update bookings (e.g., owner changing status)
+      // In a real app, you'd restrict this to authenticated owners
+      allow update: if true;
+      
+      // Allow anyone to delete bookings (e.g., owner)
+      // In a real app, you'd restrict this to authenticated owners
+      allow delete: if true;
+    }
+  }
+}
