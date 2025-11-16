@@ -1,9 +1,12 @@
 
 import { Booking } from '@/lib/types';
-import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getFirestore, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, doc, updateDoc, deleteDoc, getFirestore, Timestamp, Firestore } from 'firebase/firestore';
 import { app } from '@/firebase/config';
 
-const db = getFirestore(app);
+let db: Firestore;
+if (app) {
+    db = getFirestore(app);
+}
 
 // In-memory store for credentials for the demo.
 let credentials = {
@@ -25,6 +28,10 @@ export function setCredentials(newUsername?: string, newPassword?: string) {
 }
 
 export async function getBookings(): Promise<Booking[]> {
+  if (!db) {
+    console.log("Firestore is not initialized.");
+    return [];
+  }
   try {
     const querySnapshot = await getDocs(collection(db, "bookings"));
     const bookings = querySnapshot.docs.map(doc => {
@@ -49,6 +56,9 @@ export async function getBookings(): Promise<Booking[]> {
 }
 
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
+    if (!db) {
+        throw new Error("Firestore is not initialized.");
+    }
     try {
         const bookingWithTimestamps = {
             ...booking,
@@ -64,6 +74,9 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
 }
 
 export async function updateBooking(id: string, updatedBooking: Partial<Booking>): Promise<Booking | null> {
+    if (!db) {
+        throw new Error("Firestore is not initialized.");
+    }
     try {
         const bookingRef = doc(db, "bookings", id);
         
@@ -88,6 +101,9 @@ export async function updateBooking(id: string, updatedBooking: Partial<Booking>
 }
 
 export async function deleteBooking(id: string): Promise<boolean> {
+    if (!db) {
+        throw new Error("Firestore is not initialized.");
+    }
     try {
         await deleteDoc(doc(db, "bookings", id));
         return true;
