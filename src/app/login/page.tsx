@@ -41,12 +41,11 @@ export default function LoginPage() {
                                 type="text"
                                 placeholder="admin"
                                 required
-                                defaultValue="admin"
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="password">Password</Label>
-                            <Input id="password" name="password" type="password" required defaultValue="admin" />
+                            <Input id="password" name="password" type="password" required />
                         </div>
                         {state?.error && (
                              <p className="text-sm text-destructive">{state.error}</p>
