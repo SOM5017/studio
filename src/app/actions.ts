@@ -46,12 +46,7 @@ export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
     const fraudResult = await detectFraudulentBookings(aiInput);
 
     const newBookingData: Omit<Booking, 'id'> = {
-      fullName: bookingData.fullName,
-      mobileNumber: bookingData.mobileNumber,
-      address: bookingData.address,
-      numberOfGuests: bookingData.numberOfGuests,
-      namesOfGuests: bookingData.namesOfGuests,
-      paymentMethod: bookingData.paymentMethod,
+      ...bookingData,
       startDate,
       endDate,
       status: 'pending',
