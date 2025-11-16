@@ -1,8 +1,104 @@
 import { Booking } from '@/lib/types';
-import { v4 as uuidv4 } from 'uuid';
+import { 
+    collection, 
+    addDoc, 
+    getDocs, 
+    updateDoc, 
+    deleteDoc, 
+    doc, 
+    serverTimestamp,
+    query,
+    orderBy,
+    getFirestore,
+    DocumentData
+} from 'firebase/firestore';
+import { initializeFirebase } from '@/firebase';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
-// In-memory store for bookings for the demo.
-let bookings: Booking[] = [];
+// This function now fetches bookings from Firestore.
+// It is intended to be called from Server Components.
+export async function getBookings(): Promise<Booking[]> {
+    const { firestore } = initializeFirebase();
+    const bookingsCol = collection(firestore, 'bookings');
+    const q = query(bookingsCol, orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    
+    const bookings: Booking[] = [];
+    snapshot.forEach(doc => {
+        const data = doc.data() as DocumentData;
+        bookings.push({
+            id: doc.id,
+            startDate: data.startDate,
+            endDate: data.endDate,
+            fullName: data.fullName,
+            mobileNumber: data.mobileNumber,
+            address: data.address,
+            numberOfGuests: data.numberOfGuests,
+            namesOfGuests: data.namesOfGuests,
+            paymentMethod: data.paymentMethod,
+            status: data.status,
+            isFraudulent: data.isFraudulent,
+            fraudulentReason: data.fraudulentReason
+        });
+    });
+
+    return bookings;
+}
+
+// This function now adds a booking to Firestore.
+// It is intended to be called from Server Actions.
+export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
+    const { firestore } = initializeFirebase();
+    const bookingsCol = collection(firestore, 'bookings');
+    
+    const docData = {
+        ...booking,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+    };
+    
+    // We use the non-blocking version and get the promise
+    const docRefPromise = addDocumentNonBlocking(bookingsCol, docData);
+    
+    // We can await the promise here to get the docRef and return the full new booking object
+    const docRef = await docRefPromise;
+
+    return {
+        id: docRef.id,
+        ...booking,
+    };
+}
+
+// This function now updates a booking in Firestore.
+// It is intended to be called from Server Actions.
+export async function updateBooking(id: string, updatedBooking: Partial<Booking>): Promise<Booking | null> {
+    const { firestore } = initializeFirebase();
+    const bookingDoc = doc(firestore, 'bookings', id);
+
+    const updateData = {
+        ...updatedBooking,
+        updatedAt: serverTimestamp(),
+    };
+
+    updateDocumentNonBlocking(bookingDoc, updateData);
+    
+    // Optimistically return the updated data.
+    // A more robust solution might re-fetch the data.
+    const optimisticData = { ...updateData, id } as Booking;
+    return Promise.resolve(optimisticData);
+}
+
+// This function now deletes a booking from Firestore.
+// It is intended to be called from Server Actions.
+export async function deleteBooking(id: string): Promise<boolean> {
+    const { firestore } = initializeFirebase();
+    const bookingDoc = doc(firestore, 'bookings', id);
+    
+    deleteDocumentNonBlocking(bookingDoc);
+    
+    // Optimistically return true
+    return Promise.resolve(true);
+}
 
 // In-memory store for credentials for the demo.
 let credentials = {
@@ -22,38 +118,4 @@ export function setCredentials(newUsername?: string, newPassword?: string) {
     if (newPassword) {
         credentials.password = newPassword;
     }
-}
-
-// Functions to manage bookings in-memory
-export async function getBookings(): Promise<Booking[]> {
-    // Return a copy to prevent direct modification of the in-memory array
-    return Promise.resolve([...bookings]);
-}
-
-export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    const newBooking: Booking = {
-        id: uuidv4(),
-        ...booking,
-    };
-    bookings.push(newBooking);
-    return Promise.resolve(newBooking);
-}
-
-export async function updateBooking(id: string, updatedBooking: Partial<Booking>): Promise<Booking | null> {
-    const bookingIndex = bookings.findIndex(b => b.id === id);
-    if (bookingIndex === -1) {
-        return Promise.resolve(null);
-    }
-
-    const bookingToUpdate = bookings[bookingIndex];
-    const newBooking = { ...bookingToUpdate, ...updatedBooking };
-    bookings[bookingIndex] = newBooking;
-    
-    return Promise.resolve(newBooking);
-}
-
-export async function deleteBooking(id: string): Promise<boolean> {
-    const initialLength = bookings.length;
-    bookings = bookings.filter(b => b.id !== id);
-    return Promise.resolve(bookings.length < initialLength);
 }

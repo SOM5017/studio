@@ -47,8 +47,8 @@ export async function createBookingAction(data: z.infer<typeof bookingSchema>) {
 
     const newBookingData: Omit<Booking, 'id'> = {
       ...bookingData,
-      startDate,
-      endDate,
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
       status: 'pending',
       isFraudulent: fraudResult.isFraudulent,
       fraudulentReason: fraudResult.fraudulentReason,

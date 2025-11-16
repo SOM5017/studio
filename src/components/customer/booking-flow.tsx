@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { DateRange } from 'react-day-picker';
 import { addDays, isWithinInterval, startOfDay } from 'date-fns';
-import { Booking, PaymentMethod } from '@/lib/types';
+import { Booking } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,24 +16,26 @@ import Image from 'next/image';
 import { Loader2, PartyPopper } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
-interface BookingFlowProps {
-  bookings: Booking[];
-}
+export default function BookingFlow() {
+  const firestore = useFirestore();
+  const bookingsQuery = useMemoFirebase(() => firestore && collection(firestore, 'bookings'), [firestore]);
+  const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
 
-export default function BookingFlow({ bookings }: BookingFlowProps) {
   const [range, setRange] = React.useState<DateRange | undefined>();
   const [isFormOpen, setFormOpen] = React.useState(false);
   const [isConfirmationOpen, setConfirmationOpen] = React.useState(false);
   const [newBooking, setNewBooking] = React.useState<Booking | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
-  const [isClient, setIsClient] = React.useState(false);
   const { toast } = useToast();
   const router = useRouter();
   
   React.useEffect(() => {
-    setIsClient(true);
+    if (!bookings) return;
+
     const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
 
     const unavailableDates = confirmedBookings.reduce((acc: Date[], booking) => {
@@ -98,7 +100,11 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
           <CardDescription>Select your desired dates on the calendar. Unavailable dates are crossed out.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          {isClient ? (
+          {isLoadingBookings ? (
+            <div className="rounded-md border p-3">
+              <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
+            </div>
+          ) : (
             <Calendar
               mode="range"
               selected={range}
@@ -109,14 +115,10 @@ export default function BookingFlow({ bookings }: BookingFlowProps) {
               modifiersClassNames={{ unavailable: "day-unavailable" }}
               className="rounded-md border"
             />
-          ) : (
-            <div className="rounded-md border p-3">
-              <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
-            </div>
           )}
           <Button
             onClick={() => setFormOpen(true)}
-            disabled={!range?.from || !range?.to}
+            disabled={!range?.from || !range?.to || isLoadingBookings}
             size="lg"
             className="w-full sm:w-auto"
           >

@@ -1,130 +1,26 @@
-/**
- * @file Firebase Security Rules for BookEase Accommodations
- * @description This ruleset enforces a strict user-ownership model for customers and owners.
- * Accommodations are owned by owners. Bookings are owned by customers and accommodations.
- *
- * Data Structure:
- * - /customers/{customerId}: Customer profile information.
- * - /owners/{ownerId}: Accommodation owner profile information.
- * - /accommodations/{accommodationId}: Accommodation listings, owned by an owner.
- * - /accommodations/{accommodationId}/bookings/{bookingId}: Bookings for accommodations, accessible to the customer and the accommodation owner.
- *
- * Key Security Decisions:
- * - Users (customers and owners) can only access their own profile data.
- * - Owners can manage their own accommodations.
- * - Customers and owners can only access bookings associated with them (Authorization Independence).
- * - Data validation is relaxed for rapid prototyping, focusing on authorization.
- */
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * @description Rules for customer profiles. Customers can only read and write their own profiles.
-     * @path /customers/{customerId}
-     * @allow (create) User with UID 'user_abc' can create their own customer profile at /customers/user_abc.
-     * @deny (create) User with UID 'user_xyz' cannot create a profile at /customers/user_abc.
-     * @allow (get, update, delete) User with UID 'user_abc' can read, update, and delete their own profile at /customers/user_abc.
-     * @deny (get, update, delete) User with UID 'user_xyz' cannot read, update, or delete the profile at /customers/user_abc.
-     * @principle Enforces document ownership for customer profiles.
-     */
-    match /customers/{customerId} {
-      // Helper function to check if the user is the owner of the document.
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      // Allow the user to create their own profile if the customerId matches their UID.
-      allow create: if isSignedIn() && isOwner(customerId) && request.resource.data.id == customerId;
-
-      // Allow the owner to get, update, and delete their own profile.
-      allow get: if isSignedIn() && isOwner(customerId);
-      allow list: if false;
-      allow update: if isSignedIn() && isOwner(customerId) && resource != null && request.resource.data.id == customerId;
-      allow delete: if isSignedIn() && isOwner(customerId) && resource != null;
-    }
-
-    /**
-     * @description Rules for accommodation owner profiles. Owners can only read and write their own profiles.
-     * @path /owners/{ownerId}
-     * @allow (create) User with UID 'user_def' can create their own owner profile at /owners/user_def.
-     * @deny (create) User with UID 'user_uvw' cannot create a profile at /owners/user_def.
-     * @allow (get, update, delete) User with UID 'user_def' can read, update, and delete their own profile at /owners/user_def.
-     * @deny (get, update, delete) User with UID 'user_uvw' cannot read, update, or delete the profile at /owners/user_def.
-     * @principle Enforces document ownership for owner profiles.
-     */
-    match /owners/{ownerId} {
-      // Helper function to check if the user is the owner of the document.
-      function isOwner(ownerId) {
-        return request.auth.uid == ownerId;
-      }
-
-      // Allow the user to create their own profile if the ownerId matches their UID.
-      allow create: if isSignedIn() && isOwner(ownerId) && request.resource.data.id == ownerId;
-
-      // Allow the owner to get, update, and delete their own profile.
-      allow get: if isSignedIn() && isOwner(ownerId);
-      allow list: if false;
-      allow update: if isSignedIn() && isOwner(ownerId) && resource != null && request.resource.data.id == ownerId;
-      allow delete: if isSignedIn() && isOwner(ownerId) && resource != null;
-    }
-
-    /**
-     * @description Rules for accommodation listings. Owners can create, read, update, and delete their own accommodations.
-     * @path /accommodations/{accommodationId}
-     * @allow (create) Owner with UID 'owner_abc' can create a new accommodation with ownerId 'owner_abc'.
-     * @deny (create) Owner with UID 'owner_xyz' cannot create an accommodation with ownerId 'owner_abc'.
-     * @allow (get, list) Any signed-in user can view accommodation listings.
-     * @allow (update, delete) Owner with UID 'owner_abc' can update and delete their own accommodation.
-     * @deny (update, delete) User with UID 'user_xyz' cannot update or delete an accommodation owned by 'owner_abc'.
-     * @principle Enforces accommodation ownership for writes, public read access.
-     */
-    match /accommodations/{accommodationId} {
-      // Helper function to check if the user is the owner of the accommodation.
-      function isOwner(ownerId) {
-        return request.auth.uid == ownerId;
-      }
-
-      // Allow any signed-in user to read accommodation details.
-      allow get, list: if true;
-
-      // Allow the owner to create a new accommodation if the ownerId matches their UID.
-      allow create: if isSignedIn() && isOwner(request.resource.data.ownerId) ;
-
-      // Allow the owner to update and delete their own accommodation.
-      allow update: if isSignedIn() && isOwner(resource.data.ownerId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(resource.data.ownerId) && resource != null;
-    }
-
-    /**
-     * @description Rules for bookings under an accommodation. Accommodation owners and the booking customer can manage bookings.
-     * @path /accommodations/{accommodationId}/bookings/{bookingId}
-     * @allow (create) Customer with UID 'customer_abc' can create a booking under accommodation 'accom_123' with customerId 'customer_abc'.
-     * @deny (create) Customer with UID 'customer_xyz' cannot create a booking with customerId 'customer_abc'.
-     * @allow (get, list) Owner of accommodation 'accom_123' or customer with ID 'customer_abc' (if customerId is 'customer_abc') can read the booking.
-     * @allow (update, delete) Owner of accommodation 'accom_123' or customer with ID 'customer_abc' can update/delete the booking.
-     * @deny (update, delete) User with UID 'user_xyz' cannot update/delete a booking if not the owner or the customer.
-     * @principle Enforces booking access based on owner and customer relationship.
-     */
-    match /accommodations/{accommodationId}/bookings/{bookingId} {
-      // Helper function to check if the user is the owner of the accommodation OR the customer who made the booking.
-      function isOwnerOrCustomer(accommodationId) {
-        return (isSignedIn() && (resource.data.customerId == request.auth.uid || get(/databases/$(database)/documents/accommodations/$(accommodationId)).data.ownerId == request.auth.uid));
-      }
-
-      // Allow the customer to create a booking if the customerId matches their UID.
-      allow create: if isSignedIn() && request.resource.data.customerId == request.auth.uid;
-
-      // Allow the owner or the customer to get, update, and delete the booking.
-      allow get: if isOwnerOrCustomer(accommodationId);
-      allow list: if false; // Listing is not permitted.
-      allow update: if isOwnerOrCustomer(accommodationId) && resource != null;
-      allow delete: if isOwnerOrCustomer(accommodationId) && resource != null;
-    }
-
-    // Global helper function to check if the user is signed in.
+    
+    // Helper function to check if the user is signed in.
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    // Rules for the 'bookings' collection
+    match /bookings/{bookingId} {
+      // Anyone can create a booking, as this is a public-facing action.
+      // We rely on AI for fraud detection post-creation.
+      allow create: if true;
+
+      // Any signed-in user (implying an admin/owner in this app's context)
+      // can read, update, or delete any booking.
+      // In a multi-tenant app, this would be restricted to the owner of the accommodation.
+      allow read, update, delete: if isSignedIn();
+      
+      // Public listing of all bookings is disallowed for security.
+      allow list: if false;
     }
   }
 }

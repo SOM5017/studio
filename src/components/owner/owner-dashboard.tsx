@@ -10,11 +10,13 @@ import { useToast } from '@/hooks/use-toast';
 import { deleteBookingAction, updateBookingStatusAction } from '@/app/actions';
 import { ChangeCredentialsForm } from './change-credentials-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { ShieldCheck, List } from 'lucide-react';
+import { ShieldCheck, List, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 interface OwnerDashboardProps {
     bookings: Booking[];
@@ -26,18 +28,18 @@ const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "dest
     cancelled: 'destructive'
 }
 
-export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashboardProps) {
+export default function OwnerDashboard() {
+    const firestore = useFirestore();
+    const bookingsQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'bookings'), orderBy('createdAt', 'desc')), [firestore]);
+    const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
+    
     const { toast } = useToast();
     const router = useRouter();
-    const [bookings, setBookings] = React.useState(initialBookings);
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [isPanelOpen, setPanelOpen] = React.useState(false);
 
-    React.useEffect(() => {
-        setBookings(initialBookings);
-    }, [initialBookings]);
-
     const handleDayClick = (day: Date) => {
+        if (!bookings) return;
         const bookingForDay = bookings.find(b =>
             b.status !== 'cancelled' &&
             b.startDate && b.endDate &&
@@ -59,7 +61,7 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
 
     const handleUpdateBooking = async (id: string, status: BookingStatus) => {
         const result = await updateBookingStatusAction(id, status);
-        if (result.success && result.booking) {
+        if (result.success) {
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
             setPanelOpen(false);
             router.refresh();
@@ -79,11 +81,14 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
         }
     };
 
-    const sortedBookings = React.useMemo(() => 
-        [...bookings].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()),
-    [bookings]);
+    const sortedBookings = React.useMemo(() => {
+        if (!bookings) return [];
+        return [...bookings].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    }, [bookings]);
 
     const bookedDays = React.useMemo(() => {
+        if (!bookings) return { pending: [], confirmed: [] };
+
         return bookings.reduce((acc: { pending: Date[], confirmed: Date[] }, booking) => {
             if (booking.status === 'cancelled') return acc;
             
@@ -113,20 +118,26 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
                         <CardDescription>View and manage all your bookings. Click a date to see details if a booking exists for it.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center gap-6">
-                        <Calendar
-                            mode="single"
-                            onDayClick={handleDayClick}
-                            numberOfMonths={1}
-                            className="rounded-md border"
-                            modifiers={{ 
-                                pending: bookedDays.pending,
-                                confirmed: bookedDays.confirmed 
-                            }}
-                            modifiersClassNames={{
-                                pending: "bg-accent text-accent-foreground",
-                                confirmed: "bg-primary text-primary-foreground",
-                            }}
-                        />
+                        {isLoadingBookings ? (
+                            <div className="rounded-md border p-3">
+                                <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
+                            </div>
+                        ) : (
+                            <Calendar
+                                mode="single"
+                                onDayClick={handleDayClick}
+                                numberOfMonths={1}
+                                className="rounded-md border"
+                                modifiers={{ 
+                                    pending: bookedDays.pending,
+                                    confirmed: bookedDays.confirmed 
+                                }}
+                                modifiersClassNames={{
+                                    pending: "bg-accent text-accent-foreground",
+                                    confirmed: "bg-primary text-primary-foreground",
+                                }}
+                            />
+                        )}
                     </CardContent>
                 </Card>
                 
@@ -139,40 +150,47 @@ export default function OwnerDashboard({ bookings: initialBookings }: OwnerDashb
                         <CardDescription>A complete list of all your bookings.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Guest</TableHead>
-                                    <TableHead>Check-in</TableHead>
-                                    <TableHead>Check-out</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead className="text-right">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {sortedBookings.length > 0 ? sortedBookings.map((booking) => (
-                                    <TableRow key={booking.id}>
-                                        <TableCell className="font-medium">{booking.fullName}</TableCell>
-                                        <TableCell>{format(new Date(booking.startDate), 'PPP')}</TableCell>
-                                        <TableCell>{format(new Date(booking.endDate), 'PPP')}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={statusBadgeVariants[booking.status]} className="capitalize">
-                                                {booking.status}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Button variant="outline" size="sm" onClick={() => handleSelectBooking(booking)}>
-                                                View
-                                            </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
+                        {isLoadingBookings ? (
+                            <div className="flex justify-center items-center h-24">
+                                <Loader2 className="h-6 w-6 animate-spin" />
+                            </div>
+                        ) : (
+                            <Table>
+                                <TableHeader>
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center h-24">No bookings yet.</TableCell>
+                                        <TableHead>Guest</TableHead>
+                                        <TableHead>Check-in</TableHead>
+                                        <TableHead>Check-out</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
+                                </TableHeader>
+                                <TableBody>
+                                    {sortedBookings.length > 0 ? sortedBookings.map((booking) => (
+                                        <TableRow key={booking.id}>
+                                            <TableCell className="font-medium">{booking.fullName}</TableCell>
+                                            <TableCell>{format(new Date(booking.startDate), 'PPP')}</TableCell>
+                                            <TableCell>{format(new Date(booking.endDate), 'PPP')}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={statusBadgeVariants[booking.status]} className="capitalize">
+                                                    {booking.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Button variant="outline" size="sm" onClick={() => handleSelectBooking(booking)}>
+                                                    View
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    )) : (
+                                        <TableRow>
+                                            <TableCell colSpan={5} className="text-center h-24">No bookings yet.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
                         </Table>
+                        )}
                     </CardContent>
                 </Card>
 

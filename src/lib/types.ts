@@ -6,8 +6,8 @@ export type PaymentMethod = (typeof paymentMethods)[number];
 
 export interface Booking {
   id: string;
-  startDate: Date;
-  endDate: Date;
+  startDate: string; // Stored as ISO string
+  endDate: string; // Stored as ISO string
   fullName: string;
   mobileNumber: string;
   address: string;
@@ -17,4 +17,6 @@ export interface Booking {
   status: BookingStatus;
   isFraudulent: boolean;
   fraudulentReason: string;
+  createdAt?: any; // Firestore ServerTimestamp
+  updatedAt?: any; // Firestore ServerTimestamp
 }
