@@ -32,6 +32,11 @@ export default function BookingFlow() {
   const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
   const { toast } = useToast();
   const router = useRouter();
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   React.useEffect(() => {
     // This logic now runs only on the client, after hydration.
@@ -106,7 +111,7 @@ export default function BookingFlow() {
           <CardDescription>Select your desired dates on the calendar. Unavailable dates are crossed out.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          {isLoadingBookings && disabledDays.length === 0 ? (
+          {isLoadingBookings || !isMounted ? (
             <div className="rounded-md border p-3">
               <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
             </div>
@@ -124,7 +129,7 @@ export default function BookingFlow() {
           )}
           <Button
             onClick={() => setFormOpen(true)}
-            disabled={!range?.from || !range?.to || (isLoadingBookings && disabledDays.length === 0)}
+            disabled={!range?.from || !range?.to || (isLoadingBookings || !isMounted)}
             size="lg"
             className="w-full sm:w-auto"
           >
