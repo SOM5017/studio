@@ -72,7 +72,14 @@ export default function BookingFlow() {
     if (!range?.from || !range?.to) return;
     setIsLoading(true);
     try {
-      const result = await createBookingAction({ ...values, startDate: range.from, endDate: range.to });
+      const dataToSubmit = {
+        ...values,
+        startDate: range.from.toISOString(),
+        endDate: range.to.toISOString(),
+      };
+      
+      const result = await createBookingAction(dataToSubmit);
+
       if (result.success && result.booking) {
         setNewBooking(result.booking);
         setFormOpen(false);

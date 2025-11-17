@@ -5,8 +5,6 @@ import { z } from 'zod';
 import { addBooking, deleteBooking, updateBooking, getCredentials, setCredentials } from '@/lib/data';
 import { Booking, BookingStatus, paymentMethods } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
-import { detectFraudulentBookings, DetectFraudulentBookingsInput } from '@/ai/flows/detect-fraudulent-bookings';
-import { format } from 'date-fns';
 import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -21,17 +19,17 @@ const bookingFormSchema = z.object({
   paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
 });
 
-// Combined schema for the action, including dates
+// Combined schema for the action, including dates.
+// It now expects strings from the client and coerces them to dates for validation.
 const bookingActionSchema = bookingFormSchema.extend({
-  startDate: z.date(),
-  endDate: z.date(),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
 });
 
 
 export async function createBookingAction(data: z.infer<typeof bookingActionSchema>) {
   const validation = bookingActionSchema.safeParse(data);
   if (!validation.success) {
-    // This should ideally not happen with client-side validation, but it's a good safeguard.
     console.error("Booking validation failed:", validation.error.flatten().fieldErrors);
     return { success: false, error: "Invalid data provided." };
   }
@@ -39,19 +37,17 @@ export async function createBookingAction(data: z.infer<typeof bookingActionSche
   const { startDate, endDate, ...bookingData } = validation.data;
 
   try {
-    // This is the complete object that matches Omit<Booking, 'id'>
     const newBookingData: Omit<Booking, 'id'> = {
       ...bookingData,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
-      status: 'pending', // Set initial status
-      isFraudulent: false, // Fraud detection is disabled
-      fraudulentReason: '', // Fraud detection is disabled
+      status: 'pending',
+      isFraudulent: false, // Fraud detection is fully disabled
+      fraudulentReason: '', // Fraud detection is fully disabled
     };
-    
-    // addBooking expects the full object
+
     const newBooking = await addBooking(newBookingData);
-    
+
     revalidatePath('/');
     revalidatePath('/owner');
 
@@ -154,4 +150,3 @@ export async function changeCredentialsAction(data: z.infer<typeof changeCredent
     return { success: false, error: "Failed to update credentials." };
   }
 }
-
