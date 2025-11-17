@@ -116,7 +116,7 @@ export async function loginAction(prevState: any, data: FormData) {
     const credentials = getCredentials();
 
     if (username === credentials.username && password === credentials.password) {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'your-super-secret-key-that-is-at-least-32-chars');
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
         const token = await new SignJWT({ username, role: 'admin' })
             .setProtectedHeader({ alg: 'HS256' })
             .setIssuedAt()
