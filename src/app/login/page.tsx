@@ -9,7 +9,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -22,13 +21,6 @@ function SubmitButton() {
 
 export default function LoginPage() {
     const [state, formAction] = useActionState(loginAction, undefined);
-    const router = useRouter();
-
-    React.useEffect(() => {
-        if (state?.success) {
-            router.push('/owner');
-        }
-    }, [state, router]);
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">
