@@ -9,24 +9,20 @@ import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-// Schema for the form data ONLY
-const bookingFormSchema = z.object({
+// Schema for the form data and dates combined.
+const bookingActionSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
   mobileNumber: z.string().regex(/^(09|\+639)\d{9}$/, { message: 'Please enter a valid PH mobile number.' }),
   address: z.string().min(5, { message: 'Address must be at least 5 characters.' }),
   numberOfGuests: z.coerce.number().min(1, { message: 'At least one guest is required.' }),
   namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
   paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
-});
-
-// Combined schema for the action, including dates.
-const bookingActionSchema = bookingFormSchema.extend({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
 });
 
 
-export async function createBookingAction(data: z.infer<typeof bookingActionSchema>) {
+export async function createBookingAction(data: unknown) {
   const validation = bookingActionSchema.safeParse(data);
 
   if (!validation.success) {
