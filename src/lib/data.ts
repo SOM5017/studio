@@ -7,8 +7,10 @@ let bookings: Booking[] = [];
 
 // This function now fetches bookings from the in-memory array.
 export async function getBookings(): Promise<Booking[]> {
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 50)); 
     // Return a copy to prevent direct mutation of the array
-    return Promise.resolve([...bookings]);
+    return JSON.parse(JSON.stringify(bookings));
 }
 
 // This function now adds a booking to the in-memory array.
@@ -22,7 +24,9 @@ export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking>
     
     bookings.push(newBooking);
     
-    return Promise.resolve(newBooking);
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return JSON.parse(JSON.stringify(newBooking));
 }
 
 // This function now updates a booking in the in-memory array.
@@ -30,7 +34,7 @@ export async function updateBooking(id: string, updatedBooking: Partial<Booking>
     const bookingIndex = bookings.findIndex(b => b.id === id);
 
     if (bookingIndex === -1) {
-        return Promise.resolve(null); // Booking not found
+        return null; // Booking not found
     }
 
     const originalBooking = bookings[bookingIndex];
@@ -42,7 +46,9 @@ export async function updateBooking(id: string, updatedBooking: Partial<Booking>
 
     bookings[bookingIndex] = newBooking;
 
-    return Promise.resolve(newBooking);
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 50));
+    return JSON.parse(JSON.stringify(newBooking));
 }
 
 // This function now deletes a booking from the in-memory array.
@@ -50,8 +56,10 @@ export async function deleteBooking(id: string): Promise<boolean> {
     const initialLength = bookings.length;
     bookings = bookings.filter(b => b.id !== id);
     
+    // Simulate async operation
+    await new Promise(resolve => setTimeout(resolve, 50));
     // Return true if an item was removed, false otherwise
-    return Promise.resolve(bookings.length < initialLength);
+    return bookings.length < initialLength;
 }
 
 // In-memory store for credentials for the demo.

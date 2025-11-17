@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -23,41 +24,41 @@ const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "dest
     cancelled: 'destructive'
 }
 
-export default function OwnerDashboard() {
-    const [bookings, setBookings] = React.useState<Booking[]>([]);
-    const [isLoadingBookings, setIsLoadingBookings] = React.useState(true);
+interface OwnerDashboardProps {
+    initialBookings: Booking[];
+}
+
+export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps) {
+    const [bookings, setBookings] = React.useState<Booking[]>(initialBookings);
+    const [isLoading, setIsLoading] = React.useState(false);
     
     const { toast } = useToast();
     const router = useRouter();
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [isPanelOpen, setPanelOpen] = React.useState(false);
 
-    const fetchBookings = React.useCallback(async () => {
-        setIsLoadingBookings(true);
+    const refreshData = React.useCallback(async () => {
+        setIsLoading(true);
         try {
             const fetchedBookings = await getBookings();
             setBookings(fetchedBookings);
+            router.refresh();
         } catch (error) {
             console.error("Failed to fetch bookings:", error);
             toast({
                 variant: 'destructive',
                 title: 'Error',
-                description: 'Could not load bookings.',
+                description: 'Could not refresh bookings.',
             });
         } finally {
-            setIsLoadingBookings(false);
+            setIsLoading(false);
         }
-    }, [toast]);
+    }, [toast, router]);
     
-    React.useEffect(() => {
-        fetchBookings();
-    }, [fetchBookings]);
 
     const handleDayClick = (day: Date) => {
-        if (!bookings) return;
         const bookingForDay = bookings.find(b =>
             b.status !== 'cancelled' &&
-            b.startDate && b.endDate &&
             isWithinInterval(startOfDay(day), {
                 start: startOfDay(new Date(b.startDate)),
                 end: startOfDay(new Date(b.endDate))
@@ -79,8 +80,7 @@ export default function OwnerDashboard() {
         if (result.success) {
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
             setPanelOpen(false);
-            fetchBookings(); // Refetch data
-            router.refresh();
+            await refreshData();
         } else {
             toast({ variant: 'destructive', title: "Update Failed", description: result.error });
         }
@@ -91,21 +91,17 @@ export default function OwnerDashboard() {
         if (result.success) {
             toast({ title: "Booking Deleted", description: "The booking has been successfully removed." });
             setPanelOpen(false);
-            fetchBookings(); // Refetch data
-            router.refresh();
+            await refreshData();
         } else {
             toast({ variant: 'destructive', title: "Deletion Failed", description: result.error });
         }
     };
 
     const sortedBookings = React.useMemo(() => {
-        if (!bookings) return [];
         return [...bookings].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
     }, [bookings]);
 
     const bookedDays = React.useMemo(() => {
-        if (!bookings) return { pending: [], confirmed: [] };
-
         return bookings.reduce((acc: { pending: Date[], confirmed: Date[] }, booking) => {
             if (booking.status === 'cancelled') return acc;
             
@@ -125,38 +121,6 @@ export default function OwnerDashboard() {
             return acc;
         }, { pending: [], confirmed: [] });
     }, [bookings]);
-
-    if (isLoadingBookings && bookings.length === 0) {
-        return (
-            <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-2xl md:text-3xl">Owner Dashboard</CardTitle>
-                        <CardDescription>View and manage all your bookings. Click a date to see details if a booking exists for it.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center gap-6">
-                        <div className="rounded-md border p-3">
-                            <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
-                        </div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-2">
-                            <List className="h-5 w-5" />
-                            <CardTitle className="text-2xl">All Bookings</CardTitle>
-                        </div>
-                        <CardDescription>A complete list of all your bookings.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="flex justify-center items-center h-24">
-                            <Loader2 className="h-6 w-6 animate-spin" />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
     
     return (
         <>
@@ -167,7 +131,7 @@ export default function OwnerDashboard() {
                         <CardDescription>View and manage all your bookings. Click a date to see details if a booking exists for it.</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center gap-6">
-                        {isLoadingBookings ? (
+                        {isLoading && bookings.length === 0 ? (
                             <div className="rounded-md border p-3">
                                 <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
                             </div>
@@ -199,7 +163,7 @@ export default function OwnerDashboard() {
                         <CardDescription>A complete list of all your bookings.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {isLoadingBookings ? (
+                        {isLoading ? (
                             <div className="flex justify-center items-center h-24">
                                 <Loader2 className="h-6 w-6 animate-spin" />
                             </div>
