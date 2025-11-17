@@ -1,6 +1,8 @@
 
 "use client";
+import * as React from 'react';
 import { useFormState, useFormStatus } from 'react-dom';
+import { useRouter } from 'next/navigation';
 import { loginAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,6 +21,13 @@ function SubmitButton() {
 
 export default function LoginPage() {
     const [state, formAction] = useFormState(loginAction, undefined);
+    const router = useRouter();
+
+    React.useEffect(() => {
+        if (state?.success) {
+            router.push('/owner');
+        }
+    }, [state, router]);
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">

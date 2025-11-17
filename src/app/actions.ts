@@ -66,7 +66,6 @@ export async function encrypt(payload: any) {
   return await new SignJWT(payload)
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('1h')
     .sign(key);
 }
 
@@ -92,8 +91,8 @@ export async function loginAction(prevState: any, formData: FormData) {
         // Save the session in a cookie that expires when the browser is closed
         cookies().set('session', session, { httpOnly: true });
 
-        // Redirect to the owner dashboard
-        redirect('/owner');
+        // Return a success state to the client
+        return { success: true };
     }
 
     return { error: 'Invalid username or password' };
