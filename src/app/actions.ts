@@ -9,7 +9,7 @@ import { SignJWT } from 'jose';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
-// Schema for the form data and dates combined.
+// This schema validates the complete booking object that the action will receive.
 const bookingActionSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
   mobileNumber: z.string().regex(/^(09|\+639)\d{9}$/, { message: 'Please enter a valid PH mobile number.' }),
@@ -17,8 +17,19 @@ const bookingActionSchema = z.object({
   numberOfGuests: z.coerce.number().min(1, { message: 'At least one guest is required.' }),
   namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
   paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
+  // Dates are received as strings and coerced to Date objects for validation.
+  startDate: z.string().transform((val, ctx) => {
+    const date = new Date(val);
+    if (!isNaN(date.getTime())) return date;
+    ctx.addIssue({ code: z.ZodIssueCode.invalid_date, message: 'Invalid start date' });
+    return z.NEVER;
+  }),
+  endDate: z.string().transform((val, ctx) => {
+    const date = new Date(val);
+    if (!isNaN(date.getTime())) return date;
+    ctx.addIssue({ code: z.ZodIssueCode.invalid_date, message: 'Invalid end date' });
+    return z.NEVER;
+  }),
 });
 
 

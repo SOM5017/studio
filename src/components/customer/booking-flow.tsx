@@ -72,6 +72,7 @@ export default function BookingFlow() {
     if (!range?.from || !range?.to) return;
     setIsLoading(true);
     try {
+      // Create a single object to pass to the server action.
       const dataToSubmit = {
         ...values,
         startDate: range.from.toISOString(),
