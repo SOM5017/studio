@@ -89,7 +89,7 @@ export async function loginAction(prevState: any, formData: FormData) {
         const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
         const session = await encrypt({ user: { username: 'admin' }, expires });
         
-        cookies().set('session', session, { expires, httpOnly: true });
+        cookies().set('session', session, { httpOnly: true });
 
         redirect('/owner');
     }
