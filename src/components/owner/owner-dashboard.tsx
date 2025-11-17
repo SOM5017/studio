@@ -15,8 +15,7 @@ import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, orderBy } from 'firebase/firestore';
+import { getBookings } from '@/lib/data';
 
 const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
     pending: 'secondary',
@@ -25,19 +24,34 @@ const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "dest
 }
 
 export default function OwnerDashboard() {
-    const firestore = useFirestore();
-    const bookingsQuery = useMemoFirebase(() => firestore && query(collection(firestore, 'bookings'), orderBy('createdAt', 'desc')), [firestore]);
-    const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
+    const [bookings, setBookings] = React.useState<Booking[]>([]);
+    const [isLoadingBookings, setIsLoadingBookings] = React.useState(true);
     
     const { toast } = useToast();
     const router = useRouter();
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [isPanelOpen, setPanelOpen] = React.useState(false);
-    const [isMounted, setIsMounted] = React.useState(false);
 
+    const fetchBookings = React.useCallback(async () => {
+        setIsLoadingBookings(true);
+        try {
+            const fetchedBookings = await getBookings();
+            setBookings(fetchedBookings);
+        } catch (error) {
+            console.error("Failed to fetch bookings:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not load bookings.',
+            });
+        } finally {
+            setIsLoadingBookings(false);
+        }
+    }, [toast]);
+    
     React.useEffect(() => {
-        setIsMounted(true);
-    }, []);
+        fetchBookings();
+    }, [fetchBookings]);
 
     const handleDayClick = (day: Date) => {
         if (!bookings) return;
@@ -65,6 +79,7 @@ export default function OwnerDashboard() {
         if (result.success) {
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
             setPanelOpen(false);
+            fetchBookings(); // Refetch data
             router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Update Failed", description: result.error });
@@ -76,6 +91,7 @@ export default function OwnerDashboard() {
         if (result.success) {
             toast({ title: "Booking Deleted", description: "The booking has been successfully removed." });
             setPanelOpen(false);
+            fetchBookings(); // Refetch data
             router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Deletion Failed", description: result.error });
@@ -110,7 +126,7 @@ export default function OwnerDashboard() {
         }, { pending: [], confirmed: [] });
     }, [bookings]);
 
-    if (!isMounted) {
+    if (isLoadingBookings && bookings.length === 0) {
         return (
             <div className="space-y-6">
                 <Card>

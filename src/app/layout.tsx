@@ -3,7 +3,6 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import Header from '@/components/header';
 import { Toaster } from "@/components/ui/toaster"
-import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'JMRN Transient HOMES',
@@ -23,11 +22,9 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className={cn('font-body antialiased min-h-screen flex flex-col')}>
-        <FirebaseClientProvider>
           <Header />
           <main className="flex-grow">{children}</main>
           <Toaster />
-        </FirebaseClientProvider>
       </body>
     </html>
   );

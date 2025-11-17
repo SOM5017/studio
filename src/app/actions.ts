@@ -18,18 +18,8 @@ const bookingActionSchema = z.object({
   namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
   paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
   // Dates are received as strings and coerced to Date objects for validation.
-  startDate: z.string().transform((val, ctx) => {
-    const date = new Date(val);
-    if (!isNaN(date.getTime())) return date;
-    ctx.addIssue({ code: z.ZodIssueCode.invalid_date, message: 'Invalid start date' });
-    return z.NEVER;
-  }),
-  endDate: z.string().transform((val, ctx) => {
-    const date = new Date(val);
-    if (!isNaN(date.getTime())) return date;
-    ctx.addIssue({ code: z.ZodIssueCode.invalid_date, message: 'Invalid end date' });
-    return z.NEVER;
-  }),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
 });
 
 

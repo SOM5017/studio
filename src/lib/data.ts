@@ -1,103 +1,57 @@
 import { Booking } from '@/lib/types';
-import { 
-    collection, 
-    addDoc, 
-    getDocs, 
-    updateDoc, 
-    deleteDoc, 
-    doc, 
-    serverTimestamp,
-    query,
-    orderBy,
-    getFirestore,
-    DocumentData
-} from 'firebase/firestore';
-import { initializeFirebase } from '@/firebase';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { v4 as uuidv4 } from 'uuid';
 
-// This function now fetches bookings from Firestore.
-// It is intended to be called from Server Components.
+// This is our in-memory "database".
+// It's a simple array that will be reset every time the server restarts.
+let bookings: Booking[] = [];
+
+// This function now fetches bookings from the in-memory array.
 export async function getBookings(): Promise<Booking[]> {
-    const { firestore } = initializeFirebase();
-    const bookingsCol = collection(firestore, 'bookings');
-    const q = query(bookingsCol, orderBy('createdAt', 'desc'));
-    const snapshot = await getDocs(q);
-    
-    const bookings: Booking[] = [];
-    snapshot.forEach(doc => {
-        const data = doc.data() as DocumentData;
-        bookings.push({
-            id: doc.id,
-            startDate: data.startDate,
-            endDate: data.endDate,
-            fullName: data.fullName,
-            mobileNumber: data.mobileNumber,
-            address: data.address,
-            numberOfGuests: data.numberOfGuests,
-            namesOfGuests: data.namesOfGuests,
-            paymentMethod: data.paymentMethod,
-            status: data.status,
-            isFraudulent: data.isFraudulent,
-            fraudulentReason: data.fraudulentReason
-        });
-    });
-
-    return bookings;
+    // Return a copy to prevent direct mutation of the array
+    return Promise.resolve([...bookings]);
 }
 
-// This function now adds a booking to Firestore.
-// It is intended to be called from Server Actions.
+// This function now adds a booking to the in-memory array.
 export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
-    const { firestore } = initializeFirebase();
-    const bookingsCol = collection(firestore, 'bookings');
-    
-    const docData = {
+    const newBooking: Booking = {
+        id: uuidv4(), // Generate a unique ID
         ...booking,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
     };
     
-    // We use the non-blocking version and get the promise
-    const docRefPromise = addDocumentNonBlocking(bookingsCol, docData);
+    bookings.push(newBooking);
     
-    // We can await the promise here to get the docRef and return the full new booking object
-    const docRef = await docRefPromise;
-
-    return {
-        id: docRef.id,
-        ...booking,
-    };
+    return Promise.resolve(newBooking);
 }
 
-// This function now updates a booking in Firestore.
-// It is intended to be called from Server Actions.
+// This function now updates a booking in the in-memory array.
 export async function updateBooking(id: string, updatedBooking: Partial<Booking>): Promise<Booking | null> {
-    const { firestore } = initializeFirebase();
-    const bookingDoc = doc(firestore, 'bookings', id);
+    const bookingIndex = bookings.findIndex(b => b.id === id);
 
-    const updateData = {
+    if (bookingIndex === -1) {
+        return Promise.resolve(null); // Booking not found
+    }
+
+    const originalBooking = bookings[bookingIndex];
+    const newBooking = {
+        ...originalBooking,
         ...updatedBooking,
-        updatedAt: serverTimestamp(),
+        updatedAt: new Date().toISOString(),
     };
 
-    updateDocumentNonBlocking(bookingDoc, updateData);
-    
-    // Optimistically return the updated data.
-    // A more robust solution might re-fetch the data.
-    const optimisticData = { ...updateData, id } as Booking;
-    return Promise.resolve(optimisticData);
+    bookings[bookingIndex] = newBooking;
+
+    return Promise.resolve(newBooking);
 }
 
-// This function now deletes a booking from Firestore.
-// It is intended to be called from Server Actions.
+// This function now deletes a booking from the in-memory array.
 export async function deleteBooking(id: string): Promise<boolean> {
-    const { firestore } = initializeFirebase();
-    const bookingDoc = doc(firestore, 'bookings', id);
+    const initialLength = bookings.length;
+    bookings = bookings.filter(b => b.id !== id);
     
-    deleteDocumentNonBlocking(bookingDoc);
-    
-    // Optimistically return true
-    return Promise.resolve(true);
+    // Return true if an item was removed, false otherwise
+    return Promise.resolve(bookings.length < initialLength);
 }
 
 // In-memory store for credentials for the demo.

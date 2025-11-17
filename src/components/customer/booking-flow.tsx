@@ -17,14 +17,12 @@ import Image from 'next/image';
 import { Loader2, PartyPopper } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { getBookings } from '@/lib/data';
 
 export default function BookingFlow() {
-  const firestore = useFirestore();
-  const bookingsQuery = useMemoFirebase(() => firestore && collection(firestore, 'bookings'), [firestore]);
-  const { data: bookings, isLoading: isLoadingBookings } = useCollection<Booking>(bookingsQuery);
-
+  const [bookings, setBookings] = React.useState<Booking[]>([]);
+  const [isLoadingBookings, setIsLoadingBookings] = React.useState(true);
+  
   const [range, setRange] = React.useState<DateRange | undefined>();
   const [isFormOpen, setFormOpen] = React.useState(false);
   const [isConfirmationOpen, setConfirmationOpen] = React.useState(false);
@@ -33,10 +31,25 @@ export default function BookingFlow() {
   const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
   const { toast } = useToast();
   const router = useRouter();
-  const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setIsMounted(true);
+    async function fetchBookings() {
+      setIsLoadingBookings(true);
+      try {
+        const fetchedBookings = await getBookings();
+        setBookings(fetchedBookings);
+      } catch (error) {
+        console.error("Failed to fetch bookings:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Could not load existing bookings.',
+        });
+      } finally {
+        setIsLoadingBookings(false);
+      }
+    }
+    fetchBookings();
   }, []);
   
   React.useEffect(() => {
@@ -85,7 +98,7 @@ export default function BookingFlow() {
         setNewBooking(result.booking);
         setFormOpen(false);
         setConfirmationOpen(true);
-        router.refresh();
+        router.refresh(); // This will cause a re-fetch of data in server components
       } else {
         toast({
           variant: 'destructive',
@@ -121,7 +134,7 @@ export default function BookingFlow() {
           <CardDescription>Select your desired dates on the calendar. Unavailable dates are crossed out.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          {isLoadingBookings || !isMounted ? (
+          {isLoadingBookings ? (
             <div className="rounded-md border p-3">
               <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
             </div>
@@ -139,7 +152,7 @@ export default function BookingFlow() {
           )}
           <Button
             onClick={() => setFormOpen(true)}
-            disabled={!range?.from || !range?.to || (isLoadingBookings || !isMounted)}
+            disabled={!range?.from || !range?.to || isLoadingBookings}
             size="lg"
             className="w-full sm:w-auto"
           >
