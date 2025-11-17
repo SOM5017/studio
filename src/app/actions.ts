@@ -59,7 +59,7 @@ export async function deleteBookingAction(id: string) {
     return { success: true };
 }
 
-const secretKey = process.env.SESSION_SECRET;
+const secretKey = process.env.SESSION_SECRET || "your-secret-key-for-development";
 const key = new TextEncoder().encode(secretKey);
 
 export async function encrypt(payload: any) {
@@ -85,8 +85,9 @@ export async function loginAction(prevState: any, formData: FormData) {
     const password = formData.get('password');
 
     if (username === 'admin' && password === 'admin') {
-        const session = await encrypt({ user: { username: 'admin' }});
-        cookies().set('session', session, { httpOnly: true });
+        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+        const session = await encrypt({ user: { username: 'admin' }, expires });
+        cookies().set('session', session, { httpOnly: true, expires });
         return { success: true };
     }
 
