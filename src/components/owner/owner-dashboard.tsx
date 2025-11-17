@@ -13,7 +13,9 @@ import { subscribe, updateBooking, deleteBooking } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { Loader2, List } from 'lucide-react';
+import { Loader2, List, Settings } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ChangeCredentialsForm } from './change-credentials-form';
 
 const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
     pending: 'secondary',
@@ -110,76 +112,95 @@ export default function OwnerDashboard() {
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : (
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-1">
-                        <Card>
+                <Tabs defaultValue="bookings">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="bookings"><List />Bookings</TabsTrigger>
+                        <TabsTrigger value="settings"><Settings />Settings</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="bookings">
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+                            <div className="lg:col-span-1">
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Booking Calendar</CardTitle>
+                                        <CardDescription>Click a date to see booking details.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex justify-center">
+                                        <Calendar
+                                            mode="single"
+                                            onDayClick={handleDayClick}
+                                            className="rounded-md border"
+                                            modifiers={{ 
+                                                pending: bookedDays.pending,
+                                                confirmed: bookedDays.confirmed 
+                                            }}
+                                            modifiersClassNames={{
+                                                pending: "bg-accent text-accent-foreground",
+                                                confirmed: "bg-primary text-primary-foreground",
+                                            }}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            <div className="lg:col-span-2">
+                                <Card>
+                                    <CardHeader>
+                                        <div className="flex items-center gap-2">
+                                            <List className="h-5 w-5" />
+                                            <CardTitle>All Bookings</CardTitle>
+                                        </div>
+                                        <CardDescription>A list of all bookings.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Guest</TableHead>
+                                                    <TableHead>Check-in</TableHead>
+                                                    <TableHead>Status</TableHead>
+                                                    <TableHead className="text-right">Actions</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {sortedBookings.length > 0 ? sortedBookings.map((booking) => (
+                                                    <TableRow key={booking.id}>
+                                                        <TableCell className="font-medium">{booking.fullName}</TableCell>
+                                                        <TableCell>{format(new Date(booking.startDate), 'PPP')}</TableCell>
+                                                        <TableCell>
+                                                            <Badge variant={statusBadgeVariants[booking.status]} className="capitalize">
+                                                                {booking.status}
+                                                            </Badge>
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            <Button variant="outline" size="sm" onClick={() => handleSelectBooking(booking)}>
+                                                                View
+                                                            </Button>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={4} className="text-center h-24">No bookings yet.</TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </div>
+                    </TabsContent>
+                    <TabsContent value="settings">
+                        <Card className="mt-6">
                             <CardHeader>
-                                <CardTitle>Booking Calendar</CardTitle>
-                                <CardDescription>Click a date to see booking details.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="flex justify-center">
-                                <Calendar
-                                    mode="single"
-                                    onDayClick={handleDayClick}
-                                    className="rounded-md border"
-                                    modifiers={{ 
-                                        pending: bookedDays.pending,
-                                        confirmed: bookedDays.confirmed 
-                                    }}
-                                    modifiersClassNames={{
-                                        pending: "bg-accent text-accent-foreground",
-                                        confirmed: "bg-primary text-primary-foreground",
-                                    }}
-                                />
-                            </CardContent>
-                        </Card>
-                    </div>
-                    <div className="lg:col-span-2">
-                        <Card>
-                            <CardHeader>
-                                <div className="flex items-center gap-2">
-                                     <List className="h-5 w-5" />
-                                    <CardTitle>All Bookings</CardTitle>
-                                </div>
-                                <CardDescription>A list of all bookings.</CardDescription>
+                                <CardTitle>Account Settings</CardTitle>
+                                <CardDescription>Update your administrator credentials.</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Guest</TableHead>
-                                            <TableHead>Check-in</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {sortedBookings.length > 0 ? sortedBookings.map((booking) => (
-                                            <TableRow key={booking.id}>
-                                                <TableCell className="font-medium">{booking.fullName}</TableCell>
-                                                <TableCell>{format(new Date(booking.startDate), 'PPP')}</TableCell>
-                                                <TableCell>
-                                                    <Badge variant={statusBadgeVariants[booking.status]} className="capitalize">
-                                                        {booking.status}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    <Button variant="outline" size="sm" onClick={() => handleSelectBooking(booking)}>
-                                                        View
-                                                    </Button>
-                                                </TableCell>
-                                            </TableRow>
-                                        )) : (
-                                            <TableRow>
-                                                <TableCell colSpan={4} className="text-center h-24">No bookings yet.</TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
+                                <ChangeCredentialsForm />
                             </CardContent>
                         </Card>
-                    </div>
-                </div>
+                    </TabsContent>
+                </Tabs>
             )}
 
             {selectedBooking && (
