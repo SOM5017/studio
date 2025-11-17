@@ -86,9 +86,9 @@ export async function loginAction(prevState: any, formData: FormData) {
 
     if (username === 'admin' && password === 'admin') {
         const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-        const session = await encrypt({ user: { username: 'admin' }, expires });
+        const session = await encrypt({ user: { username: 'admin' } });
         cookies().set('session', session, { httpOnly: true, expires });
-        return { success: true };
+        redirect('/owner');
     }
 
     return { error: 'Invalid username or password' };
