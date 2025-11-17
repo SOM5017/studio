@@ -2,18 +2,24 @@
 "use client";
 
 import * as React from 'react';
-import { Booking } from '@/lib/types';
+import { Booking, BookingStatus } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { isWithinInterval, startOfDay, addDays } from 'date-fns';
+import { isWithinInterval, startOfDay, addDays, format } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { subscribe, updateBooking, deleteBooking } from '@/lib/data';
-import { StatsCards } from './stats-cards';
-import { BookingsChart } from './bookings-chart';
-import { BookingsTable } from './bookings-table';
-import { Loader2 } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { Loader2, List } from 'lucide-react';
+
+const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
+    pending: 'secondary',
+    confirmed: 'default',
+    cancelled: 'destructive'
+}
 
 export default function OwnerDashboard() {
     const [bookings, setBookings] = React.useState<Booking[]>([]);
@@ -94,27 +100,19 @@ export default function OwnerDashboard() {
             return acc;
         }, { pending: [], confirmed: [] });
     }, [bookings]);
+
+     const sortedBookings = [...bookings].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
     
     return (
         <>
             {isLoading ? (
-                <div className="flex justify-center items-center h-64">
+                 <div className="flex justify-center items-center h-64">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
             ) : (
-                <div className="space-y-6">
-                    <StatsCards bookings={bookings} />
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-                        <Card className="lg:col-span-4">
-                            <CardHeader>
-                                <CardTitle>Bookings Overview</CardTitle>
-                                <CardDescription>A chart showing your recent booking trends.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="pl-2">
-                               <BookingsChart bookings={bookings} />
-                            </CardContent>
-                        </Card>
-                        <Card className="lg:col-span-3">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="lg:col-span-1">
+                        <Card>
                             <CardHeader>
                                 <CardTitle>Booking Calendar</CardTitle>
                                 <CardDescription>Click a date to see booking details.</CardDescription>
@@ -136,7 +134,51 @@ export default function OwnerDashboard() {
                             </CardContent>
                         </Card>
                     </div>
-                    <BookingsTable bookings={bookings} onSelectBooking={handleSelectBooking} />
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <CardHeader>
+                                <div className="flex items-center gap-2">
+                                     <List className="h-5 w-5" />
+                                    <CardTitle>All Bookings</CardTitle>
+                                </div>
+                                <CardDescription>A list of all bookings.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Guest</TableHead>
+                                            <TableHead>Check-in</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {sortedBookings.length > 0 ? sortedBookings.map((booking) => (
+                                            <TableRow key={booking.id}>
+                                                <TableCell className="font-medium">{booking.fullName}</TableCell>
+                                                <TableCell>{format(new Date(booking.startDate), 'PPP')}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={statusBadgeVariants[booking.status]} className="capitalize">
+                                                        {booking.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <Button variant="outline" size="sm" onClick={() => handleSelectBooking(booking)}>
+                                                        View
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        )) : (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="text-center h-24">No bookings yet.</TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             )}
 
