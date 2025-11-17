@@ -1,3 +1,4 @@
+
 import OwnerDashboard from "@/components/owner/owner-dashboard";
 
 export const dynamic = 'force-dynamic';
