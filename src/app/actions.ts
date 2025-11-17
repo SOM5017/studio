@@ -20,7 +20,6 @@ const bookingFormSchema = z.object({
 });
 
 // Combined schema for the action, including dates.
-// It now expects strings from the client and coerces them to dates for validation.
 const bookingActionSchema = bookingFormSchema.extend({
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
@@ -29,6 +28,7 @@ const bookingActionSchema = bookingFormSchema.extend({
 
 export async function createBookingAction(data: z.infer<typeof bookingActionSchema>) {
   const validation = bookingActionSchema.safeParse(data);
+
   if (!validation.success) {
     console.error("Booking validation failed:", validation.error.flatten().fieldErrors);
     return { success: false, error: "Invalid data provided." };
@@ -42,8 +42,8 @@ export async function createBookingAction(data: z.infer<typeof bookingActionSche
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       status: 'pending',
-      isFraudulent: false, // Fraud detection is fully disabled
-      fraudulentReason: '', // Fraud detection is fully disabled
+      isFraudulent: false,
+      fraudulentReason: '',
     };
 
     const newBooking = await addBooking(newBookingData);

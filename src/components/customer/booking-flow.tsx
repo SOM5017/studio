@@ -74,8 +74,8 @@ export default function BookingFlow() {
     try {
       const dataToSubmit = {
         ...values,
-        startDate: range.from.toISOString(),
-        endDate: range.to.toISOString(),
+        startDate: range.from,
+        endDate: range.to,
       };
       
       const result = await createBookingAction(dataToSubmit);
