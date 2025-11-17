@@ -38,29 +38,15 @@ export async function createBookingAction(data: z.infer<typeof bookingActionSche
 
   const { startDate, endDate, ...bookingData } = validation.data;
 
-  // Prepare input for AI fraud detection - ensures only serializable data is passed
-  const aiInput: DetectFraudulentBookingsInput = {
-    durationOfStay: `${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`,
-    fullName: bookingData.fullName,
-    mobileNumber: bookingData.mobileNumber,
-    address: bookingData.address,
-    numberOfGuests: bookingData.numberOfGuests,
-    namesOfGuests: bookingData.namesOfGuests,
-    paymentMethod: bookingData.paymentMethod,
-  };
-
   try {
-    // Call fraud detection flow
-    const fraudResult = await detectFraudulentBookings(aiInput);
-
     // This is the complete object that matches Omit<Booking, 'id'>
     const newBookingData: Omit<Booking, 'id'> = {
       ...bookingData,
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
       status: 'pending', // Set initial status
-      isFraudulent: fraudResult.isFraudulent,
-      fraudulentReason: fraudResult.fraudulentReason,
+      isFraudulent: false, // Fraud detection is disabled
+      fraudulentReason: '', // Fraud detection is disabled
     };
     
     // addBooking expects the full object
@@ -72,7 +58,7 @@ export async function createBookingAction(data: z.infer<typeof bookingActionSche
     return { success: true, booking: newBooking };
 
   } catch (error) {
-    console.error("Error creating booking or detecting fraud:", error);
+    console.error("Error creating booking:", error);
     return { success: false, error: "An unexpected error occurred." };
   }
 }
