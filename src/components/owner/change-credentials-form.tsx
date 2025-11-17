@@ -16,6 +16,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
+import { changeCredentialsAction } from '@/app/actions';
 
 const formSchema = z.object({
   currentPassword: z.string().min(1, { message: 'Current password is required.' }),
@@ -44,28 +45,14 @@ export function ChangeCredentialsForm() {
 
     const { isSubmitting } = form.formState;
 
-    // This is where you would call a server action to update the credentials.
-    // Since the credentials are currently hardcoded, this is a placeholder.
     const onSubmit = async (values: FormValues) => {
-        console.log(values);
-
-        // Placeholder logic
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        toast({
-            title: "Feature In Development",
-            description: "Changing credentials is not yet implemented.",
-            variant: "default",
-        });
-
-        // Example of what the logic might look like with a server action:
-        // const result = await changeCredentialsAction(values);
-        // if (result.success) {
-        //     toast({ title: "Success", description: "Credentials updated successfully." });
-        //     form.reset();
-        // } else {
-        //     toast({ title: "Error", description: result.error, variant: "destructive" });
-        // }
+        const result = await changeCredentialsAction(values);
+        if (result.success) {
+            toast({ title: "Success", description: result.message });
+            form.reset();
+        } else {
+            toast({ title: "Error", description: result.error, variant: "destructive" });
+        }
     };
 
     return (

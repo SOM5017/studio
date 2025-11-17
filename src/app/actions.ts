@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify } from 'jose';
 import { redirect } from 'next/navigation';
+import { getCredentials, saveCredentials } from '@/lib/credentials';
 
 // We can't use the data functions directly in server actions anymore
 // as they rely on client-side localStorage.
@@ -81,12 +82,14 @@ export async function decrypt(input: string): Promise<any> {
 }
 
 export async function loginAction(prevState: any, formData: FormData) {
-    const username = formData.get('username');
-    const password = formData.get('password');
+    const username = formData.get('username') as string;
+    const password = formData.get('password') as string;
 
-    if (username === 'admin' && password === 'admin') {
+    const credentials = await getCredentials();
+
+    if (username === credentials.username && password === credentials.password) {
         const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-        const session = await encrypt({ user: { username: 'admin' } });
+        const session = await encrypt({ user: { username } });
         cookies().set('session', session, { httpOnly: true, expires });
         redirect('/owner');
     }
@@ -103,4 +106,31 @@ export async function getSession() {
     const session = cookies().get('session')?.value;
     if (!session) return null;
     return await decrypt(session);
+}
+
+const changeCredentialsSchema = z.object({
+  currentPassword: z.string().min(1),
+  newUsername: z.string().min(4),
+  newPassword: z.string().min(4),
+});
+
+export async function changeCredentialsAction(values: unknown) {
+    const validation = changeCredentialsSchema.safeParse(values);
+    if (!validation.success) {
+        return { success: false, error: 'Invalid data provided.' };
+    }
+
+    const { currentPassword, newUsername, newPassword } = validation.data;
+    const credentials = await getCredentials();
+
+    if (currentPassword !== credentials.password) {
+        return { success: false, error: 'Incorrect current password.' };
+    }
+
+    try {
+        await saveCredentials(newUsername, newPassword);
+        return { success: true, message: 'Credentials updated successfully!' };
+    } catch (error) {
+        return { success: false, error: 'Failed to save new credentials.' };
+    }
 }
