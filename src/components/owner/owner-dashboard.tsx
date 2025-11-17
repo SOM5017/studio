@@ -24,13 +24,9 @@ const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "dest
     cancelled: 'destructive'
 }
 
-interface OwnerDashboardProps {
-    initialBookings: Booking[];
-}
-
-export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps) {
-    const [bookings, setBookings] = React.useState<Booking[]>(initialBookings);
-    const [isLoading, setIsLoading] = React.useState(false);
+export default function OwnerDashboard() {
+    const [bookings, setBookings] = React.useState<Booking[]>([]);
+    const [isLoading, setIsLoading] = React.useState(true);
     
     const { toast } = useToast();
     const router = useRouter();
@@ -42,7 +38,6 @@ export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps)
         try {
             const fetchedBookings = await getBookings();
             setBookings(fetchedBookings);
-            router.refresh(); // This re-fetches server components and their data
         } catch (error) {
             console.error("Failed to fetch bookings:", error);
             toast({
@@ -53,8 +48,11 @@ export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps)
         } finally {
             setIsLoading(false);
         }
-    }, [toast, router]);
+    }, [toast]);
     
+    React.useEffect(() => {
+        refreshData();
+    }, [refreshData]);
 
     const handleDayClick = (day: Date) => {
         const bookingForDay = bookings.find(b =>
@@ -169,7 +167,7 @@ export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps)
                         <CardDescription>A complete list of all your bookings.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {isLoading && bookings.length > 0 ? (
+                        {isLoading && bookings.length === 0 ? (
                              <div className="flex justify-center items-center h-24">
                                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
                             </div>
