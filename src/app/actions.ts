@@ -69,7 +69,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     if (username === credentials.username && password === credentials.password) {
         const session = await encrypt({ user: { username } });
         cookies().set('session', session, { httpOnly: true });
-        redirect('/owner');
+        return { success: true };
     }
 
     return { error: 'Invalid username or password' };
