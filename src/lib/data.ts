@@ -4,31 +4,48 @@
 import { Booking } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
-// Helper function to get bookings from localStorage
-const getStoredBookings = (): Booking[] => {
+let bookings: Booking[] = [];
+type Listener = (bookings: Booking[]) => void;
+let listeners: Listener[] = [];
+
+// Helper function to get bookings from localStorage, only run once
+const getInitialBookings = (): Booking[] => {
     if (typeof window === 'undefined') {
         return [];
     }
     const stored = window.localStorage.getItem('bookings');
-    return stored ? JSON.parse(stored) : [];
+    bookings = stored ? JSON.parse(stored) : [];
+    return bookings;
 };
 
-// Helper function to set bookings in localStorage
-const setStoredBookings = (bookings: Booking[]): void => {
+// Initialize bookings on script load in the browser
+if (typeof window !== 'undefined') {
+    getInitialBookings();
+}
+
+// Helper function to set bookings in localStorage and notify listeners
+const updateAndNotify = (newBookings: Booking[]): void => {
+    bookings = newBookings;
     if (typeof window !== 'undefined') {
         window.localStorage.setItem('bookings', JSON.stringify(bookings));
     }
+    listeners.forEach(listener => listener(bookings));
 };
 
-// This function now fetches bookings from localStorage.
-// It is NOT async and must be called on the client side.
+export const subscribe = (listener: Listener): (() => void) => {
+    listeners.push(listener);
+    // Provide the initial data immediately
+    listener(bookings);
+    return () => {
+        listeners = listeners.filter(l => l !== listener);
+    };
+};
+
 export function getBookings(): Booking[] {
-    return getStoredBookings();
+    return bookings;
 }
 
-// This function now adds a booking to localStorage.
 export function addBooking(booking: Omit<Booking, 'id'>): Booking {
-    const bookings = getStoredBookings();
     const newBooking: Booking = {
         id: uuidv4(),
         ...booking,
@@ -37,14 +54,12 @@ export function addBooking(booking: Omit<Booking, 'id'>): Booking {
     };
     
     const updatedBookings = [...bookings, newBooking];
-    setStoredBookings(updatedBookings);
+    updateAndNotify(updatedBookings);
     
     return newBooking;
 }
 
-// This function now updates a booking in localStorage.
 export function updateBooking(id: string, updatedBooking: Partial<Booking>): Booking | null {
-    const bookings = getStoredBookings();
     const bookingIndex = bookings.findIndex(b => b.id === id);
 
     if (bookingIndex === -1) {
@@ -58,21 +73,20 @@ export function updateBooking(id: string, updatedBooking: Partial<Booking>): Boo
         updatedAt: new Date().toISOString(),
     };
 
-    bookings[bookingIndex] = newBooking;
-    setStoredBookings(bookings);
+    const updatedBookings = [...bookings];
+    updatedBookings[bookingIndex] = newBooking;
+    updateAndNotify(updatedBookings);
 
     return newBooking;
 }
 
-// This function now deletes a booking from localStorage.
 export function deleteBooking(id: string): boolean {
-    const bookings = getStoredBookings();
     const initialLength = bookings.length;
     
     const updatedBookings = bookings.filter(b => b.id !== id);
     
     if (updatedBookings.length < initialLength) {
-        setStoredBookings(updatedBookings);
+        updateAndNotify(updatedBookings);
         return true;
     }
     

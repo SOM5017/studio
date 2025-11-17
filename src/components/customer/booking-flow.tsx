@@ -3,7 +3,7 @@
 
 import * as React from 'react';
 import { DateRange } from 'react-day-picker';
-import { isWithinInterval, startOfDay, addDays } from 'date-fns';
+import { startOfDay, addDays } from 'date-fns';
 import { Booking } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,14 +13,14 @@ import { BookingForm, BookingFormValues } from './booking-form';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
-import { Loader2, PartyPopper, RefreshCw } from 'lucide-react';
+import { Loader2, PartyPopper } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
-import { getBookings, addBooking } from '@/lib/data';
+import { subscribe, addBooking } from '@/lib/data';
 
 export default function BookingFlow() {
   const [bookings, setBookings] = React.useState<Booking[]>([]);
-  const [isLoadingBookings, setIsLoadingBookings] = React.useState(true);
+  const [isLoading, setIsLoading] = React.useState(true);
   
   const [range, setRange] = React.useState<DateRange | undefined>();
   const [isFormOpen, setFormOpen] = React.useState(false);
@@ -31,26 +31,14 @@ export default function BookingFlow() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const fetchBookings = React.useCallback(() => {
-    setIsLoadingBookings(true);
-    try {
-      const fetchedBookings = getBookings();
-      setBookings(fetchedBookings);
-    } catch (error) {
-      console.error("Failed to fetch bookings:", error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Could not load existing bookings.',
-      });
-    } finally {
-      setIsLoadingBookings(false);
-    }
-  }, [toast]);
-
   React.useEffect(() => {
-    fetchBookings();
-  }, [fetchBookings]);
+    const unsubscribe = subscribe((newBookings) => {
+        setBookings(newBookings);
+        setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
   
   React.useEffect(() => {
     const today = new Date();
@@ -93,8 +81,7 @@ export default function BookingFlow() {
       setNewBooking(createdBooking);
       setFormOpen(false);
       setConfirmationOpen(true);
-      fetchBookings(); 
-      router.refresh(); 
+      router.refresh();
 
     } catch (error) {
         console.error("Booking submission error:", error);
@@ -125,14 +112,10 @@ export default function BookingFlow() {
               <CardTitle className="text-2xl md:text-3xl">Book Your Stay</CardTitle>
               <CardDescription>Select your desired dates on the calendar. Unavailable dates are crossed out.</CardDescription>
             </div>
-            <Button variant="outline" size="icon" onClick={fetchBookings} disabled={isLoadingBookings}>
-              <RefreshCw className={`h-4 w-4 ${isLoadingBookings ? 'animate-spin' : ''}`} />
-              <span className="sr-only">Refresh Availability</span>
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          {isLoadingBookings && !bookings.length ? (
+          {isLoading ? (
             <div className="rounded-md border p-3">
               <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
             </div>
@@ -150,7 +133,7 @@ export default function BookingFlow() {
           )}
           <Button
             onClick={() => setFormOpen(true)}
-            disabled={!range?.from || !range?.to || isLoadingBookings || isSubmitting}
+            disabled={!range?.from || !range?.to || isLoading || isSubmitting}
             size="lg"
             className="w-full sm:w-auto"
           >
