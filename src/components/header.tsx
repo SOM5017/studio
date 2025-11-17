@@ -1,8 +1,11 @@
+
 import Link from 'next/link';
 import { AppIcon } from '@/components/icons';
 import { Button } from './ui/button';
+import { getSession, logoutAction } from '@/app/actions';
 
-export default function Header() {
+export default async function Header() {
+  const session = await getSession();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -17,12 +20,25 @@ export default function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
             <nav className="flex items-center space-x-2">
-                <Button asChild variant="ghost">
-                    <Link href="/">Customer View</Link>
-                </Button>
-                <Button asChild variant="ghost">
-                    <Link href="/owner">Owner View</Link>
-                </Button>
+                {session ? (
+                  <>
+                    <Button asChild variant="ghost">
+                        <Link href="/owner">Owner View</Link>
+                    </Button>
+                    <form action={logoutAction}>
+                      <Button type="submit" variant="ghost">Logout</Button>
+                    </form>
+                  </>
+                ) : (
+                  <>
+                    <Button asChild variant="ghost">
+                        <Link href="/">Customer View</Link>
+                    </Button>
+                    <Button asChild>
+                        <Link href="/login">Owner Login</Link>
+                    </Button>
+                  </>
+                )}
             </nav>
         </div>
       </div>
