@@ -79,6 +79,7 @@ export default function OwnerDashboard() {
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
             setPanelOpen(false);
             await refreshData();
+            router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Update Failed", description: result.error });
         }
@@ -90,6 +91,7 @@ export default function OwnerDashboard() {
             toast({ title: "Booking Deleted", description: "The booking has been successfully removed." });
             setPanelOpen(false);
             await refreshData();
+            router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Deletion Failed", description: result.error });
         }

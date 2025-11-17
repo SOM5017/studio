@@ -138,10 +138,7 @@ export async function changeCredentialsAction(data: z.infer<typeof changeCredent
   
   try {
     setCredentials(validation.data.newUsername, validation.data.newPassword);
-    // In a real app, you might want to force a re-login here
-    // for now we just update and let the existing session continue until it expires.
-    // To force re-login, we could delete the cookie:
-    // cookies().delete('session');
+    revalidatePath('/owner');
     return { success: true };
   } catch (error) {
     return { success: false, error: "Failed to update credentials." };

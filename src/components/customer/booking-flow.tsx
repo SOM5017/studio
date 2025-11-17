@@ -101,7 +101,7 @@ export default function BookingFlow() {
         setConfirmationOpen(true);
         // Refresh data to show new pending booking if needed by owner view logic
         await fetchBookings(); 
-        router.refresh();
+        router.refresh(); // This is crucial to re-fetch server components
       } else {
         toast({
           variant: 'destructive',
