@@ -21,9 +21,11 @@ export default function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
             <nav className="flex items-center space-x-2">
-                <Button asChild variant="ghost">
-                    <Link href="/">Customer View</Link>
-                </Button>
+                {!session && (
+                    <Button asChild variant="ghost">
+                        <Link href="/">Customer View</Link>
+                    </Button>
+                )}
                 <Button asChild variant="ghost">
                     <Link href="/owner">Owner View</Link>
                 </Button>
