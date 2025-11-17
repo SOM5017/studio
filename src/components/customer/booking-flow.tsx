@@ -32,11 +32,12 @@ export default function BookingFlow() {
   const { toast } = useToast();
   const router = useRouter();
 
-  const fetchBookings = React.useCallback(async () => {
+  const fetchBookings = React.useCallback(() => {
     setIsLoadingBookings(true);
     try {
-      const fetchedBookings = await getBookings();
-      setBookings(fetchedBookings);
+      // Directly get the bookings array. This is now a synchronous call.
+      const fetchedBookings = getBookings();
+      setBookings([...fetchedBookings]); // Set a new array to trigger re-render
     } catch (error) {
       console.error("Failed to fetch bookings:", error);
       toast({
@@ -100,7 +101,7 @@ export default function BookingFlow() {
         setFormOpen(false);
         setConfirmationOpen(true);
         // Refresh data to show new pending booking if needed by owner view logic
-        await fetchBookings(); 
+        fetchBookings(); 
         router.refresh(); // This is crucial to re-fetch server components
       } else {
         toast({

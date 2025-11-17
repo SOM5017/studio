@@ -1,3 +1,4 @@
+
 import { Booking } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -6,11 +7,10 @@ import { v4 as uuidv4 } from 'uuid';
 let bookings: Booking[] = [];
 
 // This function now fetches bookings from the in-memory array.
-export async function getBookings(): Promise<Booking[]> {
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 50)); 
-    // Return a copy to prevent direct mutation of the array
-    return JSON.parse(JSON.stringify(bookings));
+// It is NOT async and returns a direct reference to the array to ensure
+// all parts of the app are looking at the same data source.
+export function getBookings(): Booking[] {
+    return bookings;
 }
 
 // This function now adds a booking to the in-memory array.

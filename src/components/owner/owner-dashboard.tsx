@@ -33,11 +33,12 @@ export default function OwnerDashboard() {
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [isPanelOpen, setPanelOpen] = React.useState(false);
 
-    const refreshData = React.useCallback(async () => {
+    const refreshData = React.useCallback(() => {
         setIsLoading(true);
         try {
-            const fetchedBookings = await getBookings();
-            setBookings(fetchedBookings);
+            // Directly get the bookings array. This is now a synchronous call.
+            const fetchedBookings = getBookings();
+            setBookings([...fetchedBookings]); // Set a new array to trigger re-render
         } catch (error) {
             console.error("Failed to fetch bookings:", error);
             toast({
@@ -78,7 +79,7 @@ export default function OwnerDashboard() {
         if (result.success) {
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
             setPanelOpen(false);
-            await refreshData();
+            refreshData(); // Refresh data after update
             router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Update Failed", description: result.error });
@@ -90,7 +91,7 @@ export default function OwnerDashboard() {
         if (result.success) {
             toast({ title: "Booking Deleted", description: "The booking has been successfully removed." });
             setPanelOpen(false);
-            await refreshData();
+            refreshData(); // Refresh data after delete
             router.refresh();
         } else {
             toast({ variant: 'destructive', title: "Deletion Failed", description: result.error });
