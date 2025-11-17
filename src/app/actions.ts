@@ -113,13 +113,10 @@ export async function loginAction(prevState: any, data: FormData) {
             maxAge: 60 * 60, // 1 hour
             path: '/',
         });
-
-        // When redirecting, don't return a value.
-        // The framework will handle the redirect.
+        
         redirect('/owner');
     }
 
-    // Only return a state update on failure.
     return { success: false, error: "Invalid username or password" };
 }
 
