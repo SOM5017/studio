@@ -2,24 +2,18 @@
 "use client";
 
 import * as React from 'react';
-import { Booking, BookingStatus } from '@/lib/types';
+import { Booking } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { isWithinInterval, startOfDay, format, addDays } from 'date-fns';
+import { isWithinInterval, startOfDay, addDays } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
-import { List, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '../ui/badge';
-import { Button } from '../ui/button';
 import { subscribe, updateBooking, deleteBooking } from '@/lib/data';
-
-const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
-    pending: 'secondary',
-    confirmed: 'default',
-    cancelled: 'destructive'
-}
+import { StatsCards } from './stats-cards';
+import { BookingsChart } from './bookings-chart';
+import { BookingsTable } from './bookings-table';
+import { Loader2 } from 'lucide-react';
 
 export default function OwnerDashboard() {
     const [bookings, setBookings] = React.useState<Booking[]>([]);
@@ -58,7 +52,7 @@ export default function OwnerDashboard() {
         setPanelOpen(true);
     };
 
-    const handleUpdateBooking = (id: string, status: BookingStatus) => {
+    const handleUpdateBooking = (id: string, status: any) => {
         const result = updateBooking(id, { status });
         if (result) {
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
@@ -79,10 +73,6 @@ export default function OwnerDashboard() {
             toast({ variant: 'destructive', title: "Deletion Failed", description: "Booking not found." });
         }
     };
-
-    const sortedBookings = React.useMemo(() => {
-        return [...bookings].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-    }, [bookings]);
 
     const bookedDays = React.useMemo(() => {
         return bookings.reduce((acc: { pending: Date[], confirmed: Date[] }, booking) => {
@@ -107,91 +97,48 @@ export default function OwnerDashboard() {
     
     return (
         <>
-            <div className="space-y-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="text-2xl md:text-3xl">Owner Dashboard</CardTitle>
-                        <CardDescription>View and manage all your bookings. Click a date to see details if a booking exists for it.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-col items-center gap-6">
-                        {isLoading ? (
-                            <div className="rounded-md border p-3">
-                                <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
-                            </div>
-                        ) : (
-                            <Calendar
-                                mode="single"
-                                onDayClick={handleDayClick}
-                                numberOfMonths={1}
-                                className="rounded-md border"
-                                modifiers={{ 
-                                    pending: bookedDays.pending,
-                                    confirmed: bookedDays.confirmed 
-                                }}
-                                modifiersClassNames={{
-                                    pending: "bg-accent text-accent-foreground",
-                                    confirmed: "bg-primary text-primary-foreground",
-                                }}
-                            />
-                        )}
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-2">
-                                <List className="h-5 w-5" />
-                                <CardTitle className="text-2xl">All Bookings</CardTitle>
-                            </div>
-                        </div>
-                        <CardDescription>A complete list of all your bookings.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                             <div className="flex justify-center items-center h-24">
-                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                            </div>
-                        ) : (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Guest</TableHead>
-                                        <TableHead>Check-in</TableHead>
-                                        <TableHead>Check-out</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {sortedBookings.length > 0 ? sortedBookings.map((booking) => (
-                                        <TableRow key={booking.id}>
-                                            <TableCell className="font-medium">{booking.fullName}</TableCell>
-                                            <TableCell>{format(new Date(booking.startDate), 'PPP')}</TableCell>
-                                            <TableCell>{format(new Date(booking.endDate), 'PPP')}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={statusBadgeVariants[booking.status]} className="capitalize">
-                                                    {booking.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right">
-                                                <Button variant="outline" size="sm" onClick={() => handleSelectBooking(booking)}>
-                                                    View
-                                                </Button>
-                                            </TableCell>
-                                        </TableRow>
-                                    )) : (
-                                        <TableRow>
-                                            <TableCell colSpan={5} className="text-center h-24">No bookings yet.</TableCell>
-                                        </TableRow>
-                                    )}
-                                </TableBody>
-                            </Table>
-                        )}
-                    </CardContent>
-                </Card>
-
-            </div>
+            {isLoading ? (
+                <div className="flex justify-center items-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    <StatsCards bookings={bookings} />
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+                        <Card className="lg:col-span-4">
+                            <CardHeader>
+                                <CardTitle>Bookings Overview</CardTitle>
+                                <CardDescription>A chart showing your recent booking trends.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="pl-2">
+                               <BookingsChart bookings={bookings} />
+                            </CardContent>
+                        </Card>
+                        <Card className="lg:col-span-3">
+                            <CardHeader>
+                                <CardTitle>Booking Calendar</CardTitle>
+                                <CardDescription>Click a date to see booking details.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex justify-center">
+                                <Calendar
+                                    mode="single"
+                                    onDayClick={handleDayClick}
+                                    className="rounded-md border"
+                                    modifiers={{ 
+                                        pending: bookedDays.pending,
+                                        confirmed: bookedDays.confirmed 
+                                    }}
+                                    modifiersClassNames={{
+                                        pending: "bg-accent text-accent-foreground",
+                                        confirmed: "bg-primary text-primary-foreground",
+                                    }}
+                                />
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <BookingsTable bookings={bookings} onSelectBooking={handleSelectBooking} />
+                </div>
+            )}
 
             {selectedBooking && (
                 <BookingDetailPanel
