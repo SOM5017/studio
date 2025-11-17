@@ -86,11 +86,13 @@ export async function loginAction(prevState: any, formData: FormData) {
     const password = formData.get('password');
 
     if (username === 'admin' && password === 'admin') {
-        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
-        const session = await encrypt({ user: { username: 'admin' }, expires });
+        // Create the session
+        const session = await encrypt({ user: { username: 'admin' }});
         
+        // Save the session in a cookie that expires when the browser is closed
         cookies().set('session', session, { httpOnly: true });
 
+        // Redirect to the owner dashboard
         redirect('/owner');
     }
 
@@ -98,6 +100,7 @@ export async function loginAction(prevState: any, formData: FormData) {
 }
 
 export async function logoutAction() {
+    // Expire the cookie to log the user out
     cookies().set('session', '', { expires: new Date(0) });
     redirect('/');
 }
