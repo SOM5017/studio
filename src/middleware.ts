@@ -9,6 +9,19 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session')?.value;
   const { pathname } = request.nextUrl;
 
+  // If logged in, redirect from customer view to owner view
+  if (session && pathname === '/') {
+    try {
+      await jwtVerify(session, secret);
+      return NextResponse.redirect(new URL('/owner', request.url));
+    } catch (err) {
+      // Invalid token, let them stay but clear cookie
+      const response = NextResponse.next();
+      response.cookies.delete('session');
+      return response;
+    }
+  }
+
   // Protect the /owner route and its children
   if (pathname.startsWith('/owner')) {
     if (!session) {
@@ -36,5 +49,5 @@ export async function middleware(request: NextRequest) {
 
 // The matcher configuration ensures this middleware runs only for the specified paths.
 export const config = {
-  matcher: ['/owner/:path*', '/login'],
+  matcher: ['/owner/:path*', '/login', '/'],
 }
