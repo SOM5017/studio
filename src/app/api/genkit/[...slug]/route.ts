@@ -2,7 +2,7 @@
 
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
-import { createGenkitHandler } from '@genkit-ai/next/server';
+import { createGenkitHandler } from '@genkit-ai/next';
 
 
 export const ai = genkit({
