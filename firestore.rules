@@ -13,11 +13,11 @@ service cloud.firestore {
       // Anyone can create a booking, as this is a public-facing action.
       allow create: if true;
 
-      // Allow public read access for calendar availability, but restrict writes to signed-in admins.
-      allow read: if true;
-      allow update, delete: if isSignedIn();
+      // Only signed-in admins can read, update, or delete a specific booking's details.
+      allow read, update, delete: if isSignedIn();
       
-      // Allow public listing of bookings for the calendar.
+      // Allow public listing of bookings for the calendar to check for availability,
+      // but do not allow reading the full documents without authentication.
       allow list: if true;
     }
   }
