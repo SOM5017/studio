@@ -4,9 +4,9 @@
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { SignJWT, jwtVerify } from 'jose';
 import { redirect } from 'next/navigation';
 import { getCredentials, saveCredentials } from '@/lib/credentials';
+import { encrypt, getSession } from '@/lib/session';
 
 // We can't use the data functions directly in server actions anymore
 // as they rely on client-side localStorage.
@@ -60,27 +60,6 @@ export async function deleteBookingAction(id: string) {
     return { success: true };
 }
 
-const secretKey = process.env.SESSION_SECRET || "your-secret-key-for-development";
-const key = new TextEncoder().encode(secretKey);
-
-export async function encrypt(payload: any) {
-  return await new SignJWT(payload)
-    .setProtectedHeader({ alg: 'HS256' })
-    .setIssuedAt()
-    .sign(key);
-}
-
-export async function decrypt(input: string): Promise<any> {
-  try {
-    const { payload } = await jwtVerify(input, key, {
-      algorithms: ['HS256'],
-    });
-    return payload;
-  } catch (error) {
-    return null;
-  }
-}
-
 export async function loginAction(prevState: any, formData: FormData) {
     const username = formData.get('username') as string;
     const password = formData.get('password') as string;
@@ -88,9 +67,8 @@ export async function loginAction(prevState: any, formData: FormData) {
     const credentials = await getCredentials();
 
     if (username === credentials.username && password === credentials.password) {
-        const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
         const session = await encrypt({ user: { username } });
-        cookies().set('session', session, { httpOnly: true, expires });
+        cookies().set('session', session, { httpOnly: true });
         redirect('/owner');
     }
 
@@ -100,12 +78,6 @@ export async function loginAction(prevState: any, formData: FormData) {
 export async function logoutAction() {
     cookies().set('session', '', { expires: new Date(0) });
     redirect('/');
-}
-
-export async function getSession() {
-    const session = cookies().get('session')?.value;
-    if (!session) return null;
-    return await decrypt(session);
 }
 
 const changeCredentialsSchema = z.object({

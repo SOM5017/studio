@@ -2,7 +2,8 @@
 import Link from 'next/link';
 import { AppIcon } from '@/components/icons';
 import { Button } from './ui/button';
-import { getSession, logoutAction } from '@/app/actions';
+import { logoutAction } from '@/app/actions';
+import { getSession } from '@/lib/session';
 
 export default async function Header() {
   const session = await getSession();
