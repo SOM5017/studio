@@ -61,23 +61,3 @@ export async function deleteBooking(id: string): Promise<boolean> {
     // Return true if an item was removed, false otherwise
     return bookings.length < initialLength;
 }
-
-// In-memory store for credentials for the demo.
-let credentials = {
-    username: 'admin',
-    password: 'admin',
-};
-
-// Functions to manage credentials
-export function getCredentials() {
-    return credentials;
-}
-
-export function setCredentials(newUsername?: string, newPassword?: string) {
-    if (newUsername) {
-        credentials.username = newUsername;
-    }
-    if (newPassword) {
-        credentials.password = newPassword;
-    }
-}
