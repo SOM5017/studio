@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { deleteBookingAction, updateBookingStatusAction } from '@/app/actions';
 import { ChangeCredentialsForm } from './change-credentials-form';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { ShieldCheck, List, Loader2 } from 'lucide-react';
+import { ShieldCheck, List, Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
@@ -42,7 +42,7 @@ export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps)
         try {
             const fetchedBookings = await getBookings();
             setBookings(fetchedBookings);
-            router.refresh();
+            router.refresh(); // This re-fetches server components and their data
         } catch (error) {
             console.error("Failed to fetch bookings:", error);
             toast({
@@ -156,16 +156,22 @@ export default function OwnerDashboard({ initialBookings }: OwnerDashboardProps)
                 
                 <Card>
                     <CardHeader>
-                        <div className="flex items-center gap-2">
-                            <List className="h-5 w-5" />
-                            <CardTitle className="text-2xl">All Bookings</CardTitle>
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                                <List className="h-5 w-5" />
+                                <CardTitle className="text-2xl">All Bookings</CardTitle>
+                            </div>
+                             <Button variant="outline" size="icon" onClick={refreshData} disabled={isLoading}>
+                                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+                                <span className="sr-only">Refresh Bookings</span>
+                            </Button>
                         </div>
                         <CardDescription>A complete list of all your bookings.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {isLoading ? (
-                            <div className="flex justify-center items-center h-24">
-                                <Loader2 className="h-6 w-6 animate-spin" />
+                        {isLoading && bookings.length > 0 ? (
+                             <div className="flex justify-center items-center h-24">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
                             </div>
                         ) : (
                             <Table>

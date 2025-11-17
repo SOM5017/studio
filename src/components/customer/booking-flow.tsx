@@ -14,7 +14,7 @@ import { createBookingAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
-import { Loader2, PartyPopper } from 'lucide-react';
+import { Loader2, PartyPopper, RefreshCw } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
 import { getBookings } from '@/lib/data';
@@ -27,30 +27,31 @@ export default function BookingFlow() {
   const [isFormOpen, setFormOpen] = React.useState(false);
   const [isConfirmationOpen, setConfirmationOpen] = React.useState(false);
   const [newBooking, setNewBooking] = React.useState<Booking | null>(null);
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [disabledDays, setDisabledDays] = React.useState<(Date | { before: Date })[]>([]);
   const { toast } = useToast();
   const router = useRouter();
 
-  React.useEffect(() => {
-    async function fetchBookings() {
-      setIsLoadingBookings(true);
-      try {
-        const fetchedBookings = await getBookings();
-        setBookings(fetchedBookings);
-      } catch (error) {
-        console.error("Failed to fetch bookings:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Could not load existing bookings.',
-        });
-      } finally {
-        setIsLoadingBookings(false);
-      }
+  const fetchBookings = React.useCallback(async () => {
+    setIsLoadingBookings(true);
+    try {
+      const fetchedBookings = await getBookings();
+      setBookings(fetchedBookings);
+    } catch (error) {
+      console.error("Failed to fetch bookings:", error);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Could not load existing bookings.',
+      });
+    } finally {
+      setIsLoadingBookings(false);
     }
+  }, [toast]);
+
+  React.useEffect(() => {
     fetchBookings();
-  }, []);
+  }, [fetchBookings]);
   
   React.useEffect(() => {
     // This logic now runs only on the client, after hydration.
@@ -83,7 +84,7 @@ export default function BookingFlow() {
 
   const handleBookingSubmit = async (values: BookingFormValues) => {
     if (!range?.from || !range?.to) return;
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
       // Create a single object to pass to the server action.
       const dataToSubmit = {
@@ -98,7 +99,9 @@ export default function BookingFlow() {
         setNewBooking(result.booking);
         setFormOpen(false);
         setConfirmationOpen(true);
-        router.refresh(); // This will cause a re-fetch of data in server components
+        // Refresh data to show new pending booking if needed by owner view logic
+        await fetchBookings(); 
+        router.refresh();
       } else {
         toast({
           variant: 'destructive',
@@ -114,7 +117,7 @@ export default function BookingFlow() {
             description: 'Something went wrong on our end. Please try again later.',
         });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -130,11 +133,19 @@ export default function BookingFlow() {
     <>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl md:text-3xl">Book Your Stay</CardTitle>
-          <CardDescription>Select your desired dates on the calendar. Unavailable dates are crossed out.</CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-2xl md:text-3xl">Book Your Stay</CardTitle>
+              <CardDescription>Select your desired dates on the calendar. Unavailable dates are crossed out.</CardDescription>
+            </div>
+            <Button variant="outline" size="icon" onClick={fetchBookings} disabled={isLoadingBookings}>
+              <RefreshCw className={`h-4 w-4 ${isLoadingBookings ? 'animate-spin' : ''}`} />
+              <span className="sr-only">Refresh Availability</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          {isLoadingBookings ? (
+          {isLoadingBookings && !bookings.length ? (
             <div className="rounded-md border p-3">
               <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
             </div>
@@ -152,7 +163,7 @@ export default function BookingFlow() {
           )}
           <Button
             onClick={() => setFormOpen(true)}
-            disabled={!range?.from || !range?.to || isLoadingBookings}
+            disabled={!range?.from || !range?.to || isLoadingBookings || isSubmitting}
             size="lg"
             className="w-full sm:w-auto"
           >
@@ -170,7 +181,7 @@ export default function BookingFlow() {
             <BookingForm
               range={range}
               onSubmit={handleBookingSubmit}
-              isLoading={isLoading}
+              isLoading={isSubmitting}
             />
           )}
         </DialogContent>
