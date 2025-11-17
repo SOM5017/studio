@@ -85,21 +85,15 @@ export async function loginAction(prevState: any, formData: FormData) {
     const password = formData.get('password');
 
     if (username === 'admin' && password === 'admin') {
-        // Create the session
         const session = await encrypt({ user: { username: 'admin' }});
-        
-        // Save the session in a cookie that expires when the browser is closed
         cookies().set('session', session, { httpOnly: true });
-
-        // Redirect to owner dashboard
-        redirect('/owner');
+        return { success: true };
     }
 
     return { error: 'Invalid username or password' };
 }
 
 export async function logoutAction() {
-    // Expire the cookie to log the user out
     cookies().set('session', '', { expires: new Date(0) });
     redirect('/');
 }
