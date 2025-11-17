@@ -31,7 +31,8 @@ const bookingActionSchema = bookingFormSchema.extend({
 export async function createBookingAction(data: z.infer<typeof bookingActionSchema>) {
   const validation = bookingActionSchema.safeParse(data);
   if (!validation.success) {
-    // This should ideally not happen with client-side validation
+    // This should ideally not happen with client-side validation, but it's a good safeguard.
+    console.error("Booking validation failed:", validation.error.flatten().fieldErrors);
     return { success: false, error: "Invalid data provided." };
   }
 
@@ -40,12 +41,7 @@ export async function createBookingAction(data: z.infer<typeof bookingActionSche
   // Prepare input for AI fraud detection
   const aiInput: DetectFraudulentBookingsInput = {
     durationOfStay: `${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`,
-    fullName: bookingData.fullName,
-    mobileNumber: bookingData.mobileNumber,
-    address: bookingData.address,
-    numberOfGuests: bookingData.numberOfGuests,
-    namesOfGuests: bookingData.namesOfGuests,
-    paymentMethod: bookingData.paymentMethod,
+    ...bookingData
   };
 
   try {
