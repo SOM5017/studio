@@ -74,8 +74,8 @@ export default function BookingFlow() {
     try {
       const dataToSubmit = {
         ...values,
-        startDate: range.from,
-        endDate: range.to,
+        startDate: range.from.toISOString(),
+        endDate: range.to.toISOString(),
       };
       
       const result = await createBookingAction(dataToSubmit);
@@ -93,11 +93,12 @@ export default function BookingFlow() {
         });
       }
     } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'An Error Occurred',
-        description: 'Something went wrong on our end. Please try again later.',
-      });
+        console.error("Booking submission error:", error);
+        toast({
+            variant: 'destructive',
+            title: 'An Error Occurred',
+            description: 'Something went wrong on our end. Please try again later.',
+        });
     } finally {
       setIsLoading(false);
     }
