@@ -3,21 +3,20 @@
 
 import * as React from 'react';
 import { DateRange } from 'react-day-picker';
-import { addDays, isWithinInterval, startOfDay } from 'date-fns';
+import { isWithinInterval, startOfDay, addDays } from 'date-fns';
 import { Booking } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { BookingForm, BookingFormValues } from './booking-form';
-import { createBookingAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { Loader2, PartyPopper, RefreshCw } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
-import { getBookings } from '@/lib/data';
+import { getBookings, addBooking } from '@/lib/data';
 
 export default function BookingFlow() {
   const [bookings, setBookings] = React.useState<Booking[]>([]);
@@ -35,9 +34,8 @@ export default function BookingFlow() {
   const fetchBookings = React.useCallback(() => {
     setIsLoadingBookings(true);
     try {
-      // Directly get the bookings array. This is now a synchronous call.
       const fetchedBookings = getBookings();
-      setBookings([...fetchedBookings]); // Set a new array to trigger re-render
+      setBookings(fetchedBookings);
     } catch (error) {
       console.error("Failed to fetch bookings:", error);
       toast({
@@ -55,14 +53,8 @@ export default function BookingFlow() {
   }, [fetchBookings]);
   
   React.useEffect(() => {
-    // This logic now runs only on the client, after hydration.
     const today = new Date();
-    if (!bookings) {
-      // Set initial disabled days (past dates) even if bookings haven't loaded
-      setDisabledDays([{ before: today }]);
-      return;
-    };
-
+    
     const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
 
     const unavailableDates = confirmedBookings.reduce((acc: Date[], booking) => {
@@ -83,39 +75,33 @@ export default function BookingFlow() {
     setDisabledDays([{ before: today }, ...unavailableDates]);
   }, [bookings]);
 
-  const handleBookingSubmit = async (values: BookingFormValues) => {
+  const handleBookingSubmit = (values: BookingFormValues) => {
     if (!range?.from || !range?.to) return;
     setIsSubmitting(true);
     try {
-      // Create a single object to pass to the server action.
-      const dataToSubmit = {
+      const newBookingData: Omit<Booking, 'id'> = {
         ...values,
         startDate: range.from.toISOString(),
         endDate: range.to.toISOString(),
+        status: 'pending',
+        isFraudulent: false,
+        fraudulentReason: '',
       };
       
-      const result = await createBookingAction(dataToSubmit);
+      const createdBooking = addBooking(newBookingData);
 
-      if (result.success && result.booking) {
-        setNewBooking(result.booking);
-        setFormOpen(false);
-        setConfirmationOpen(true);
-        // Refresh data to show new pending booking if needed by owner view logic
-        fetchBookings(); 
-        router.refresh(); // This is crucial to re-fetch server components
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Booking Failed',
-          description: result.error || 'Could not create your booking. Please try again.',
-        });
-      }
+      setNewBooking(createdBooking);
+      setFormOpen(false);
+      setConfirmationOpen(true);
+      fetchBookings(); 
+      router.refresh(); 
+
     } catch (error) {
         console.error("Booking submission error:", error);
         toast({
             variant: 'destructive',
             title: 'An Error Occurred',
-            description: 'Something went wrong on our end. Please try again later.',
+            description: 'Something went wrong. Please try again.',
         });
     } finally {
       setIsSubmitting(false);

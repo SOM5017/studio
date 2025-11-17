@@ -2,81 +2,55 @@
 "use server";
 
 import { z } from 'zod';
-import { addBooking, deleteBooking, updateBooking } from '@/lib/data';
-import { Booking, BookingStatus, paymentMethods } from '@/lib/types';
 import { revalidatePath } from 'next/cache';
+// We can't use the data functions directly in server actions anymore
+// as they rely on client-side localStorage.
+// The logic will be handled on the client. We keep these actions
+// for potential future use or to maintain the structure.
 
-// This schema validates the complete booking object that the action will receive.
+// This schema validates the complete booking object.
 const bookingActionSchema = z.object({
   fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
   mobileNumber: z.string().regex(/^(09|\+639)\d{9}$/, { message: 'Please enter a valid PH mobile number.' }),
   address: z.string().min(5, { message: 'Address must be at least 5 characters.' }),
   numberOfGuests: z.coerce.number().min(1, { message: 'At least one guest is required.' }),
   namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
-  paymentMethod: z.enum(paymentMethods, { required_error: 'Please select a payment method.' }),
-  // Dates are received as strings and coerced to Date objects for validation.
+  paymentMethod: z.enum(['gcash', 'cash'], { required_error: 'Please select a payment method.' }),
   startDate: z.coerce.date(),
   endDate: z.coerce.date(),
 });
 
 
+// NOTE: createBookingAction is no longer the primary mechanism for creating bookings
+// due to the shift to localStorage. The logic is now in booking-flow.tsx.
+// This server action remains as a placeholder.
 export async function createBookingAction(data: unknown) {
   const validation = bookingActionSchema.safeParse(data);
 
   if (!validation.success) {
-    console.error("Booking validation failed:", validation.error.flatten().fieldErrors);
     return { success: false, error: "Invalid data provided." };
   }
+  
+  // In a real DB scenario, this is where you'd call your database service.
+  // Since we're using localStorage, the actual data creation happens on the client.
+  // We'll just revalidate paths here.
+  
+  revalidatePath('/');
+  revalidatePath('/owner');
 
-  const { startDate, endDate, ...bookingData } = validation.data;
-
-  try {
-    const newBookingData: Omit<Booking, 'id'> = {
-      ...bookingData,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      status: 'pending',
-      isFraudulent: false,
-      fraudulentReason: '',
-    };
-
-    const newBooking = await addBooking(newBookingData);
-
-    revalidatePath('/');
-    revalidatePath('/owner');
-
-    return { success: true, booking: newBooking };
-
-  } catch (error) {
-    console.error("Error creating booking:", error);
-    return { success: false, error: "An unexpected error occurred." };
-  }
+  return { success: true, bookingData: validation.data };
 }
 
-export async function updateBookingStatusAction(id: string, status: BookingStatus) {
-    try {
-        const updated = await updateBooking(id, { status });
-        if (!updated) {
-            return { success: false, error: 'Booking not found.' };
-        }
-        revalidatePath('/owner');
-        revalidatePath('/');
-        return { success: true, booking: updated };
-    } catch(error) {
-        return { success: false, error: 'Failed to update booking.' };
-    }
+// Similarly, these actions will revalidate paths, but the core logic
+// is now triggered on the client side.
+export async function updateBookingStatusAction(id: string, status: string) {
+    revalidatePath('/owner');
+    revalidatePath('/');
+    return { success: true };
 }
 
 export async function deleteBookingAction(id: string) {
-    try {
-        const success = await deleteBooking(id);
-        if (!success) {
-            return { success: false, error: 'Booking not found.' };
-        }
-        revalidatePath('/owner');
-        revalidatePath('/');
-        return { success: true };
-    } catch (error) {
-        return { success: false, error: 'Failed to delete booking.' };
-    }
+    revalidatePath('/owner');
+    revalidatePath('/');
+    return { success: true };
 }

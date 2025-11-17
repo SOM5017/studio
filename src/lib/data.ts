@@ -1,40 +1,54 @@
 
+"use client";
+
 import { Booking } from '@/lib/types';
 import { v4 as uuidv4 } from 'uuid';
 
-// This is our in-memory "database".
-// It's a simple array that will be reset every time the server restarts.
-let bookings: Booking[] = [];
+// Helper function to get bookings from localStorage
+const getStoredBookings = (): Booking[] => {
+    if (typeof window === 'undefined') {
+        return [];
+    }
+    const stored = window.localStorage.getItem('bookings');
+    return stored ? JSON.parse(stored) : [];
+};
 
-// This function now fetches bookings from the in-memory array.
-// It is NOT async and returns a direct reference to the array to ensure
-// all parts of the app are looking at the same data source.
+// Helper function to set bookings in localStorage
+const setStoredBookings = (bookings: Booking[]): void => {
+    if (typeof window !== 'undefined') {
+        window.localStorage.setItem('bookings', JSON.stringify(bookings));
+    }
+};
+
+// This function now fetches bookings from localStorage.
+// It is NOT async and must be called on the client side.
 export function getBookings(): Booking[] {
-    return bookings;
+    return getStoredBookings();
 }
 
-// This function now adds a booking to the in-memory array.
-export async function addBooking(booking: Omit<Booking, 'id'>): Promise<Booking> {
+// This function now adds a booking to localStorage.
+export function addBooking(booking: Omit<Booking, 'id'>): Booking {
+    const bookings = getStoredBookings();
     const newBooking: Booking = {
-        id: uuidv4(), // Generate a unique ID
+        id: uuidv4(),
         ...booking,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
     };
     
-    bookings.push(newBooking);
+    const updatedBookings = [...bookings, newBooking];
+    setStoredBookings(updatedBookings);
     
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 50));
-    return JSON.parse(JSON.stringify(newBooking));
+    return newBooking;
 }
 
-// This function now updates a booking in the in-memory array.
-export async function updateBooking(id: string, updatedBooking: Partial<Booking>): Promise<Booking | null> {
+// This function now updates a booking in localStorage.
+export function updateBooking(id: string, updatedBooking: Partial<Booking>): Booking | null {
+    const bookings = getStoredBookings();
     const bookingIndex = bookings.findIndex(b => b.id === id);
 
     if (bookingIndex === -1) {
-        return null; // Booking not found
+        return null;
     }
 
     const originalBooking = bookings[bookingIndex];
@@ -45,19 +59,22 @@ export async function updateBooking(id: string, updatedBooking: Partial<Booking>
     };
 
     bookings[bookingIndex] = newBooking;
+    setStoredBookings(bookings);
 
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 50));
-    return JSON.parse(JSON.stringify(newBooking));
+    return newBooking;
 }
 
-// This function now deletes a booking from the in-memory array.
-export async function deleteBooking(id: string): Promise<boolean> {
+// This function now deletes a booking from localStorage.
+export function deleteBooking(id: string): boolean {
+    const bookings = getStoredBookings();
     const initialLength = bookings.length;
-    bookings = bookings.filter(b => b.id !== id);
     
-    // Simulate async operation
-    await new Promise(resolve => setTimeout(resolve, 50));
-    // Return true if an item was removed, false otherwise
-    return bookings.length < initialLength;
+    const updatedBookings = bookings.filter(b => b.id !== id);
+    
+    if (updatedBookings.length < initialLength) {
+        setStoredBookings(updatedBookings);
+        return true;
+    }
+    
+    return false;
 }

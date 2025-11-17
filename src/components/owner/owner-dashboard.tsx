@@ -8,13 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { isWithinInterval, startOfDay, format, addDays } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
-import { deleteBookingAction, updateBookingStatusAction } from '@/app/actions';
 import { List, Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { getBookings } from '@/lib/data';
+import { getBookings, updateBooking, deleteBooking } from '@/lib/data';
 
 const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
     pending: 'secondary',
@@ -34,9 +33,8 @@ export default function OwnerDashboard() {
     const refreshData = React.useCallback(() => {
         setIsLoading(true);
         try {
-            // Directly get the bookings array. This is now a synchronous call.
             const fetchedBookings = getBookings();
-            setBookings([...fetchedBookings]); // Set a new array to trigger re-render
+            setBookings(fetchedBookings);
         } catch (error) {
             console.error("Failed to fetch bookings:", error);
             toast({
@@ -72,27 +70,27 @@ export default function OwnerDashboard() {
         setPanelOpen(true);
     };
 
-    const handleUpdateBooking = async (id: string, status: BookingStatus) => {
-        const result = await updateBookingStatusAction(id, status);
-        if (result.success) {
+    const handleUpdateBooking = (id: string, status: BookingStatus) => {
+        const result = updateBooking(id, { status });
+        if (result) {
             toast({ title: "Booking Updated", description: "The booking status has been successfully updated." });
             setPanelOpen(false);
-            refreshData(); // Refresh data after update
+            refreshData();
             router.refresh();
         } else {
-            toast({ variant: 'destructive', title: "Update Failed", description: result.error });
+            toast({ variant: 'destructive', title: "Update Failed", description: "Booking not found." });
         }
     };
 
-    const handleDeleteBooking = async (id: string) => {
-        const result = await deleteBookingAction(id);
-        if (result.success) {
+    const handleDeleteBooking = (id: string) => {
+        const result = deleteBooking(id);
+        if (result) {
             toast({ title: "Booking Deleted", description: "The booking has been successfully removed." });
             setPanelOpen(false);
-            refreshData(); // Refresh data after delete
+            refreshData();
             router.refresh();
         } else {
-            toast({ variant: 'destructive', title: "Deletion Failed", description: result.error });
+            toast({ variant: 'destructive', title: "Deletion Failed", description: "Booking not found." });
         }
     };
 
