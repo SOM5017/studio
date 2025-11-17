@@ -91,8 +91,8 @@ export async function loginAction(prevState: any, formData: FormData) {
         // Save the session in a cookie that expires when the browser is closed
         cookies().set('session', session, { httpOnly: true });
 
-        // Return a success state to the client
-        return { success: true };
+        // Redirect to owner dashboard
+        redirect('/owner');
     }
 
     return { error: 'Invalid username or password' };
