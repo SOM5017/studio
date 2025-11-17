@@ -9,9 +9,7 @@ import { isWithinInterval, startOfDay, format, addDays } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
 import { deleteBookingAction, updateBookingStatusAction } from '@/app/actions';
-import { ChangeCredentialsForm } from './change-credentials-form';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { ShieldCheck, List, Loader2, RefreshCw } from 'lucide-react';
+import { List, Loader2, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
@@ -212,28 +210,6 @@ export default function OwnerDashboard() {
                         )}
                     </CardContent>
                 </Card>
-
-                <Accordion type="single" collapsible>
-                    <AccordionItem value="item-1">
-                        <AccordionTrigger>
-                            <div className="flex items-center gap-2">
-                                <ShieldCheck className="h-5 w-5" />
-                                <span className="text-lg font-semibold">Security Settings</span>
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                           <Card>
-                                <CardHeader>
-                                    <CardTitle>Change Credentials</CardTitle>
-                                    <CardDescription>Update your admin username and password.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <ChangeCredentialsForm />
-                                </CardContent>
-                           </Card>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
 
             </div>
 
