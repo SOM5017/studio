@@ -38,10 +38,15 @@ export async function createBookingAction(data: z.infer<typeof bookingActionSche
 
   const { startDate, endDate, ...bookingData } = validation.data;
 
-  // Prepare input for AI fraud detection
+  // Prepare input for AI fraud detection - ensures only serializable data is passed
   const aiInput: DetectFraudulentBookingsInput = {
     durationOfStay: `${format(startDate, 'PPP')} to ${format(endDate, 'PPP')}`,
-    ...bookingData
+    fullName: bookingData.fullName,
+    mobileNumber: bookingData.mobileNumber,
+    address: bookingData.address,
+    numberOfGuests: bookingData.numberOfGuests,
+    namesOfGuests: bookingData.namesOfGuests,
+    paymentMethod: bookingData.paymentMethod,
   };
 
   try {
