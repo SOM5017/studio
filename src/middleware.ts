@@ -11,10 +11,12 @@ export async function middleware(request: NextRequest) {
   const isOwnerPath = request.nextUrl.pathname.startsWith('/owner');
   const isLoginPath = request.nextUrl.pathname.startsWith('/login');
 
+  // If trying to access owner page and not logged in, redirect to login
   if (isOwnerPath && !sessionData) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
+  // If trying to access login page and already logged in, redirect to owner page
   if (isLoginPath && sessionData) {
     return NextResponse.redirect(new URL('/owner', request.url));
   }
@@ -23,5 +25,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Only run the middleware on owner and login routes
   matcher: ['/owner/:path*', '/login'],
 }

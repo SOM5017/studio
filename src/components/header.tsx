@@ -23,6 +23,9 @@ export default async function Header() {
                 {session ? (
                   <>
                     <Button asChild variant="ghost">
+                        <Link href="/">Customer View</Link>
+                    </Button>
+                    <Button asChild variant="ghost">
                         <Link href="/owner">Owner View</Link>
                     </Button>
                     <form action={logoutAction}>
