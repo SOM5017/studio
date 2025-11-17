@@ -100,7 +100,7 @@ export async function loginAction(prevState: any, data: FormData) {
     const credentials = getCredentials();
 
     if (username === credentials.username && password === credentials.password) {
-        const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+        const secret = new TextEncoder().encode(process.env.JWT_SECRET || 'default-secret-for-dev');
         const token = await new SignJWT({ username, role: 'admin' })
             .setProtectedHeader({ alg: 'HS256' })
             .setIssuedAt()
@@ -114,9 +114,12 @@ export async function loginAction(prevState: any, data: FormData) {
             path: '/',
         });
 
+        // When redirecting, don't return a value.
+        // The framework will handle the redirect.
         redirect('/owner');
     }
 
+    // Only return a state update on failure.
     return { success: false, error: "Invalid username or password" };
 }
 
