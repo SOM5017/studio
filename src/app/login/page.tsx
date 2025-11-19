@@ -27,25 +27,40 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
-  // This effect is the key to the new logic.
-  // It redirects ONLY when the user object is confirmed to exist OR
-  // when the server action has explicitly returned a success state.
+  // Redirect if the user is already logged in and the session is confirmed.
   useEffect(() => {
-    // If the server action returned success, or if Firebase confirms a user session, redirect.
-    if (state?.success || (!isUserLoading && user)) {
+    if (!isUserLoading && user) {
       router.replace('/owner');
     }
-  }, [user, isUserLoading, router, state]);
+  }, [user, isUserLoading, router]);
 
-  // While checking for user auth state, show a loading screen.
-  // This prevents the login form from flashing for an already logged-in user.
-  if (isUserLoading || user) {
+  // Also redirect if the server action has just completed successfully.
+  // This handles the immediate redirect after form submission.
+  useEffect(() => {
+    if (state?.success) {
+      router.replace('/owner');
+    }
+  }, [state, router]);
+
+  // While checking auth state, show a loading screen to prevent form flash.
+  if (isUserLoading) {
      return (
         <div className="flex h-full w-full flex-col items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <p className="mt-4 text-muted-foreground">Verifying session...</p>
         </div>
     );
+  }
+  
+  // If the user is already logged in but the redirect hasn't happened yet,
+  // also show a loading/redirecting message.
+  if (user) {
+    return (
+       <div className="flex h-full w-full flex-col items-center justify-center">
+           <Loader2 className="h-12 w-12 animate-spin text-primary" />
+           <p className="mt-4 text-muted-foreground">Redirecting...</p>
+       </div>
+   );
   }
 
   // Only show the login form if loading is complete and there is no user.
