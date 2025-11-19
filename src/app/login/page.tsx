@@ -22,12 +22,12 @@ export default function LoginPage() {
     const [state, formAction] = useActionState(loginAction, { error: undefined });
     
     return (
-        <div className="flex items-center justify-center min-h-screen bg-background p-4">
+        <div className="flex items-center justify-center flex-grow bg-background p-4">
             <Card className="w-full max-w-sm">
                 <CardHeader>
                     <CardTitle className="text-2xl">Owner Login</CardTitle>
                     <CardDescription>
-                        Enter your credentials to access the owner dashboard.
+                        Enter your credentials to access your dashboard.
                     </CardDescription>
                 </CardHeader>
                 <form action={formAction}>
@@ -38,7 +38,6 @@ export default function LoginPage() {
                                 id="username"
                                 name="username"
                                 type="text"
-                                placeholder="admin"
                                 required
                             />
                         </div>
@@ -48,7 +47,6 @@ export default function LoginPage() {
                                 id="password"
                                 name="password"
                                 type="password"
-                                placeholder="admin"
                                 required
                             />
                         </div>
