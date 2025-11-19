@@ -2,7 +2,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, User } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged, User } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,7 +14,7 @@ export default function LoginPage() {
     const { auth } = useFirebase();
     const router = useRouter();
     const [email, setEmail] = useState('admin@example.com');
-    const [password, setPassword] = useState('admin1234');
+    const [password, setPassword] = useState('admin');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true); // Start with loading true to check auth state
     const [isLoggingIn, setIsLoggingIn] = useState(false);
