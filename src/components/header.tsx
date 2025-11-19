@@ -21,7 +21,7 @@ export default function Header() {
                 href="/"
                 className="transition-colors hover:text-foreground/80 text-foreground/60"
               >
-                Bookings
+                Customer View
               </Link>
           </nav>
         </div>
