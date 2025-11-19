@@ -8,6 +8,7 @@ import { logoutAction } from '@/app/actions';
 import { useUser } from '@/firebase';
 import { useFormStatus } from 'react-dom';
 import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 function LogoutButton() {
   const { pending } = useFormStatus();
@@ -21,9 +22,16 @@ function LogoutButton() {
 export default function Header() {
   const { user, isUserLoading } = useUser();
   const pathname = usePathname();
+  // We add a state to force re-evaluation on path change.
+  const [key, setKey] = useState(Date.now());
+
+  useEffect(() => {
+    setKey(Date.now());
+  }, [pathname]);
+
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header key={key} className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center">
         <div className="mr-4 flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
