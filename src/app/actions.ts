@@ -21,7 +21,7 @@ export async function loginAction(prevState: any, formData: FormData) {
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
             try {
-                // If user doesn't exist, create it.
+                // If user doesn't exist, create it with the admin credentials.
                 await createUserWithEmailAndPassword(auth, email, password);
             } catch (creationError: any) {
                 return { error: creationError.message };
@@ -32,15 +32,8 @@ export async function loginAction(prevState: any, formData: FormData) {
             return { error: error.message };
         }
     }
-    // After a successful initial login or creation, signIn again to ensure session is set
-    // before redirecting.
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-        redirect('/owner');
-    } catch (e: any) {
-        // This should not fail if the previous block succeeded, but handle just in case.
-        return { error: "Login failed after user setup. Please try again."};
-    }
+    // After a successful initial login or creation, redirect to the owner page.
+    redirect('/owner');
 }
 
 export async function logoutAction() {
