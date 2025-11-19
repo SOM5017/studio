@@ -16,7 +16,7 @@ import { Button } from '../ui/button';
 import { Loader2, List, Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ChangeCredentialsForm } from './change-credentials-form';
-import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
 const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "destructive"> = {
     pending: 'secondary',
@@ -26,16 +26,8 @@ const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "dest
 
 export default function OwnerDashboard() {
     const firestore = useFirestore();
-    const { user, isUserLoading } = useUser();
     const router = useRouter();
     
-    // Redirect if not logged in
-    React.useEffect(() => {
-        if (!isUserLoading && !user) {
-            router.push('/login');
-        }
-    }, [user, isUserLoading, router]);
-
     const bookingsCollection = useMemoFirebase(() => firestore ? getBookingsCollection(firestore) : null, [firestore]);
     const { data: bookings, isLoading: isBookingsLoading } = useCollection<Booking>(bookingsCollection);
 
@@ -135,9 +127,8 @@ export default function OwnerDashboard() {
         });
     }, [bookings]);
 
-    const isLoading = isUserLoading || isBookingsLoading;
 
-    if (isLoading || !user) {
+    if (isBookingsLoading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
