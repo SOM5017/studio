@@ -10,11 +10,6 @@ import { firebaseConfig } from '@/firebase/config';
 const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 
-export async function logoutAction() {
-    await auth.signOut();
-    redirect('/');
-}
-
 export async function loginAction(previousState: any, formData: FormData) {
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
@@ -55,4 +50,9 @@ export async function loginAction(previousState: any, formData: FormData) {
 
   // If sign-in (or creation and subsequent sign-in) is successful, redirect.
   redirect('/owner');
+}
+
+export async function logoutAction() {
+    await auth.signOut();
+    redirect('/');
 }
