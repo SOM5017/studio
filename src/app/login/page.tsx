@@ -1,6 +1,6 @@
 
 "use client";
-import { useActionState, useEffect } from 'react';
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { loginAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,6 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
-import { useUser } from '@/firebase';
-import { useRouter } from 'next/navigation';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -22,26 +20,7 @@ function SubmitButton() {
 
 export default function LoginPage() {
     const [state, formAction] = useActionState(loginAction, { error: undefined });
-    const { user, isUserLoading } = useUser();
-    const router = useRouter();
-
-    useEffect(() => {
-        // If the user is already logged in, redirect them away from the login page.
-        if (!isUserLoading && user) {
-            router.replace('/owner');
-        }
-    }, [user, isUserLoading, router]);
-
-    // While we check for the user's auth state, or if they are already logged in, show a loader.
-    if (isUserLoading || user) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="h-8 w-8 animate-spin" />
-            </div>
-        )
-    }
-
-    // If the user is not logged in, show the login form.
+    
     return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">
             <Card className="w-full max-w-sm">
