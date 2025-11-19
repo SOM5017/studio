@@ -5,11 +5,11 @@ import * as React from 'react';
 import { Booking, BookingStatus } from '@/lib/types';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { isWithinInterval, startOfDay, addDays, format, isValid } from 'date-fns';
+import { isWithinInterval, startOfDay, addDays, format, isValid, subDays } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { updateBooking, deleteBooking, getBookingsCollection } from '@/lib/data';
+import { updateBooking, deleteBooking, getBookingsCollection, addBooking } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -42,6 +42,32 @@ export default function OwnerDashboard() {
     const { toast } = useToast();
     const [selectedBooking, setSelectedBooking] = React.useState<Booking | null>(null);
     const [isPanelOpen, setPanelOpen] = React.useState(false);
+    
+    // Seed data effect
+    React.useEffect(() => {
+        if (firestore && !isBookingsLoading && bookings && bookings.length === 0) {
+            console.log("No bookings found, creating a sample booking.");
+            const sampleBooking: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'> = {
+                fullName: "John Doe (Sample)",
+                mobileNumber: "09123456789",
+                address: "123 Sample St, Sample City",
+                numberOfGuests: 2,
+                namesOfGuests: "John Doe, Jane Doe",
+                paymentMethod: "cash",
+                status: "confirmed",
+                startDate: subDays(new Date(), 2).toISOString(),
+                endDate: addDays(new Date(), 2).toISOString(),
+                isFraudulent: false,
+                fraudulentReason: "",
+            };
+            addBooking(firestore, sampleBooking);
+             toast({
+                title: "Sample Booking Created",
+                description: "A sample booking was added to get you started.",
+            });
+        }
+    }, [firestore, bookings, isBookingsLoading, toast]);
+
 
     const handleDayClick = (day: Date) => {
         const bookingForDay = bookings?.find(b =>
