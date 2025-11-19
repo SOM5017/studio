@@ -1,14 +1,14 @@
 
 'use client';
 
-import React, { type DependencyList, type ReactNode } from 'react';
+import * as React from 'react';
 import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 
 interface FirebaseProviderProps {
-  children: ReactNode;
+  children: React.ReactNode;
   firebaseApp: FirebaseApp;
   firestore: Firestore;
   auth: Auth;
@@ -98,7 +98,7 @@ export const useFirebaseApp = (): FirebaseApp => {
 
 type MemoFirebase <T> = T & {__memo?: boolean};
 
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
+export function useMemoFirebase<T>(factory: () => T, deps: React.DependencyList): T {
   const memoized = React.useMemo(factory, deps);
   
   if(typeof memoized !== 'object' || memoized === null) return memoized;
