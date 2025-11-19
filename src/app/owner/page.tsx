@@ -12,13 +12,15 @@ export default function OwnerPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // Only perform redirection after the initial user loading is complete.
+        // This effect runs only when the loading state is finished.
+        // It prevents any redirection logic from running while Firebase is still checking auth.
         if (!isUserLoading && !user) {
             router.replace('/login');
         }
     }, [user, isUserLoading, router]);
 
-    // Show loading indicator while Firebase is checking the auth state.
+    // STATE 1: Authentication is in progress.
+    // Show a loading indicator and do nothing else. This is the key to preventing the loop.
     if (isUserLoading) {
         return (
             <div className="flex h-full w-full flex-col items-center justify-center">
@@ -28,8 +30,8 @@ export default function OwnerPage() {
         );
     }
 
-    // If loading is complete and we have a user, show the dashboard.
-    // If there's no user, this will be null for a moment before the useEffect redirects.
+    // STATE 2: Loading is complete, and we have a user.
+    // Show the protected dashboard content.
     if (user) {
         return (
             <div className="container mx-auto p-4 md:p-8">
@@ -39,13 +41,13 @@ export default function OwnerPage() {
         );
     }
     
-    // Fallback for the brief moment before redirection occurs.
-    // This state is hit when isUserLoading is false but user is null.
-    // The useEffect will then trigger the redirect to '/login'.
+    // STATE 3: Loading is complete, but there is no user.
+    // The useEffect above will handle the redirection. In the meantime,
+    // show a redirecting message to avoid a flash of unstyled content.
     return (
         <div className="flex h-full w-full flex-col items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="mt-4 text-muted-foreground">Redirecting...</p>
+            <p className="mt-4 text-muted-foreground">Redirecting to login...</p>
         </div>
     );
 }
