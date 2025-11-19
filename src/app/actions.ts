@@ -25,18 +25,22 @@ export async function loginAction(prevState: any, formData: FormData) {
     try {
         await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
+        // If the user does not exist, create them.
         if (error.code === 'auth/user-not-found') {
-            // If the admin user doesn't exist, create it.
             try {
+                // Create the new admin user.
                 await createUserWithEmailAndPassword(auth, email, password);
                 // After creation, sign in again to establish a session.
                 await signInWithEmailAndPassword(auth, email, password);
             } catch (creationError: any) {
+                // This might happen if there's a network issue or other Firebase error during creation.
                 return { error: `Could not create admin user: ${creationError.message}` };
             }
         } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+             // This happens on subsequent login attempts with the wrong password.
              return { error: "Invalid username or password." };
         } else {
+            // Handle other potential errors (e.g., network issues, disabled account).
             return { error: `An unexpected error occurred: ${error.message}` };
         }
     }
