@@ -30,7 +30,6 @@ export async function loginAction(previousState: any, formData: FormData) {
     if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
       try {
         // NOTE: Firebase Auth has password requirements (e.g., minimum 6 characters).
-        // If "admin123" fails, you may need a stronger password.
         await createUserWithEmailAndPassword(auth, adminEmail, password);
         // After creating, sign in to establish the session
         await signInWithEmailAndPassword(auth, adminEmail, password);
