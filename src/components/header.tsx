@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { logoutAction } from '@/app/actions';
 import { useUser } from '@/firebase';
 import { useFormStatus } from 'react-dom';
+import { usePathname } from 'next/navigation';
 
 function LogoutButton() {
   const { pending } = useFormStatus();
@@ -19,6 +20,7 @@ function LogoutButton() {
 
 export default function Header() {
   const { user, isUserLoading } = useUser();
+  const pathname = usePathname();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -33,17 +35,28 @@ export default function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
             <nav className="flex items-center space-x-2">
-                <Button asChild variant="ghost">
-                    <Link href="/">Customer View</Link>
-                </Button>
-                <Button asChild>
-                    <Link href="/owner">Owner View</Link>
-                </Button>
-                 {isUserLoading ? null : user ? (
+                {pathname !== '/' && (
+                  <Button asChild variant="ghost">
+                      <Link href="/">Customer View</Link>
+                  </Button>
+                )}
+                
+                {isUserLoading ? null : user ? (
+                  <>
+                    {pathname !== '/owner' && (
+                        <Button asChild>
+                            <Link href="/owner">Owner View</Link>
+                        </Button>
+                    )}
                     <form action={logoutAction}>
                       <LogoutButton />
                     </form>
-                ) : null}
+                  </>
+                ) : (
+                  <Button asChild>
+                    <Link href="/login">Owner Login</Link>
+                  </Button>
+                )}
             </nav>
         </div>
       </div>

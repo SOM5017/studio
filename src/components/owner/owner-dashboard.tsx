@@ -8,7 +8,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { isWithinInterval, startOfDay, addDays, format, isValid, subDays } from 'date-fns';
 import { BookingDetailPanel } from './booking-detail-panel';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { updateBooking, deleteBooking, getBookingsCollection, addBooking } from '@/lib/data';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '../ui/badge';
@@ -26,7 +25,6 @@ const statusBadgeVariants: Record<BookingStatus, "default" | "secondary" | "dest
 
 export default function OwnerDashboard() {
     const firestore = useFirestore();
-    const router = useRouter();
     
     const bookingsCollection = useMemoFirebase(() => firestore ? getBookingsCollection(firestore) : null, [firestore]);
     const { data: bookings, isLoading: isBookingsLoading } = useCollection<Booking>(bookingsCollection);
