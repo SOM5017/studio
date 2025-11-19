@@ -3,7 +3,7 @@
 
 import { useState, useEffect, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, onAuthStateChanged, User } from 'firebase/auth';
+import { signInWithEmailAndPassword, onAuthStateChanged, User, createUserWithEmailAndPassword } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,7 @@ export default function LoginPage() {
     const [email, setEmail] = useState('owner@example.com');
     const [password, setPassword] = useState('password');
     const [error, setError] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true); // Start with loading true to check auth state
+    const [isLoading, setIsLoading] = useState(true);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
     const [user, setUser] = useState<User | null>(null);
 
@@ -47,16 +47,22 @@ export default function LoginPage() {
         setError(null);
 
         try {
+            // First, try to sign in.
             await signInWithEmailAndPassword(auth, email, password);
-            // The onAuthStateChanged listener will handle the redirect
         } catch (error: any) {
-            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-                setError("Invalid credentials. Please try again.");
+            // If the user does not exist, create the user and then sign in.
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                try {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                    // The onAuthStateChanged listener will handle the redirect after creation.
+                } catch (creationError: any) {
+                    setError("Could not create account. Please try again.");
+                    setIsLoggingIn(false);
+                }
+            } else {
+                 setError("Invalid credentials. Please try again.");
+                 setIsLoggingIn(false);
             }
-            else {
-                setError("An unexpected error occurred. Please try again later.");
-            }
-            setIsLoggingIn(false);
         }
     };
     
