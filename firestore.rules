@@ -3,6 +3,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
+    // Admins collection can only be read. No one can write to it from the client.
+    match /admins/{adminId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Bookings can be read by anyone.
     // New bookings can be created by anyone (customers).
     // Existing bookings can only be modified or deleted by an authenticated user (the owner).
