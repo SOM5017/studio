@@ -27,7 +27,7 @@ export async function loginAction(previousState: any, formData: FormData) {
     await signInWithEmailAndPassword(auth, adminEmail, password);
   } catch (e: any) {
     // Step 3: If the user doesn't exist, create them and sign in again
-    if (e.code === 'auth/user-not-found') {
+    if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
       try {
         await createUserWithEmailAndPassword(auth, adminEmail, password);
         // After creating, sign in to establish the session
@@ -36,7 +36,7 @@ export async function loginAction(previousState: any, formData: FormData) {
         // Handle potential errors during user creation
         return { message: `An unexpected error occurred during setup: ${creationError.message}` };
       }
-    } else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+    } else if (e.code === 'auth/wrong-password') {
       // Handle incorrect password for an existing user
       return { message: 'Invalid username or password.' };
     } else {
@@ -54,3 +54,4 @@ export async function logoutAction() {
     await getAuth(firebaseApp).signOut();
     redirect('/');
 }
+
