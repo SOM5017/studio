@@ -1,7 +1,8 @@
 
 "use client";
 import * as React from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useEffect } from 'react';
+import { useFormStatus } from 'react-dom';
 import { loginAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,11 +22,11 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
-    const [state, formAction] = useFormState(loginAction, { error: undefined });
+    const [state, formAction] = useActionState(loginAction, { error: undefined });
     const { user, isUserLoading } = useUser();
     const router = useRouter();
 
-    React.useEffect(() => {
+    useEffect(() => {
         if (!isUserLoading && user) {
             router.push('/owner');
         }
