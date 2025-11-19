@@ -27,25 +27,30 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
 
+  // This effect is the key to the new logic.
+  // It redirects ONLY when the user object is confirmed to exist.
   useEffect(() => {
-    // If user check is done and we have a user, redirect them to the owner dashboard.
     if (!isUserLoading && user) {
       router.replace('/owner');
     }
-  }, [user, isUserLoading, router]);
+    // Also check for the success message from the form action
+    if(state?.success) {
+      router.replace('/owner');
+    }
+  }, [user, isUserLoading, router, state]);
 
-  // While checking for user auth state, or if the user is found (and we are about to redirect), show a loading screen.
-  // This prevents the login form from flashing on the screen for an already logged-in user.
+  // While checking for user auth state, show a loading screen.
+  // This prevents the login form from flashing for an already logged-in user.
   if (isUserLoading || user) {
      return (
         <div className="flex h-full w-full flex-col items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="mt-4 text-muted-foreground">Loading...</p>
+            <p className="mt-4 text-muted-foreground">Verifying session...</p>
         </div>
     );
   }
 
-  // Only show the login form if the loading is complete and there is no user.
+  // Only show the login form if loading is complete and there is no user.
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">
@@ -56,7 +61,7 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form action={formAction} className="space-y-6">
-              {state?.message && (
+              {state?.message && !state?.success && (
                 <Alert variant="destructive">
                   <AlertTriangle className="h-4 w-4" />
                   <AlertTitle>Login Failed</AlertTitle>
