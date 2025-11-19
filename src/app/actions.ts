@@ -15,7 +15,7 @@ export async function loginAction(previousState: any, formData: FormData) {
   const password = formData.get('password') as string;
 
   // Step 1: Check for hardcoded credentials
-  if (username !== 'admin' || password !== 'admin') {
+  if (username !== 'admin123' || password !== 'admin123') {
     return { message: 'Invalid username or password.' };
   }
 
@@ -29,6 +29,8 @@ export async function loginAction(previousState: any, formData: FormData) {
     // Step 3: If the user doesn't exist, create them and sign in again
     if (e.code === 'auth/user-not-found' || e.code === 'auth/invalid-credential') {
       try {
+        // NOTE: Firebase Auth has password requirements (e.g., minimum 6 characters).
+        // If "admin123" fails, you may need a stronger password.
         await createUserWithEmailAndPassword(auth, adminEmail, password);
         // After creating, sign in to establish the session
         await signInWithEmailAndPassword(auth, adminEmail, password);
@@ -54,4 +56,3 @@ export async function logoutAction() {
     await getAuth(firebaseApp).signOut();
     redirect('/');
 }
-
