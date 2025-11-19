@@ -19,7 +19,7 @@ export default function OwnerPage() {
     }, [user, isUserLoading, router]);
 
     // STATE 1: Authentication is in progress.
-    // Show a loading indicator and do nothing else. This is the key to preventing the loop.
+    // Show a loading indicator and do nothing else. This prevents premature redirects.
     if (isUserLoading) {
         return (
             <div className="flex h-full w-full flex-col items-center justify-center">
@@ -42,7 +42,7 @@ export default function OwnerPage() {
     
     // STATE 3: Loading is complete, but there is no user.
     // The useEffect above will handle the redirection. In the meantime,
-    // show a redirecting message to avoid a flash of unstyled content.
+    // show a redirecting message to avoid a flash of unstyled content or the dashboard.
     return (
         <div className="flex h-full w-full flex-col items-center justify-center">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />

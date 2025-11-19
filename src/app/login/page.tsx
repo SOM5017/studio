@@ -28,13 +28,11 @@ export default function LoginPage() {
   const router = useRouter();
 
   // This effect is the key to the new logic.
-  // It redirects ONLY when the user object is confirmed to exist.
+  // It redirects ONLY when the user object is confirmed to exist OR
+  // when the server action has explicitly returned a success state.
   useEffect(() => {
-    if (!isUserLoading && user) {
-      router.replace('/owner');
-    }
-    // Also check for the success message from the form action
-    if(state?.success) {
+    // If the server action returned success, or if Firebase confirms a user session, redirect.
+    if (state?.success || (!isUserLoading && user)) {
       router.replace('/owner');
     }
   }, [user, isUserLoading, router, state]);
