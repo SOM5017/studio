@@ -33,28 +33,17 @@ export default function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
             <nav className="flex items-center space-x-2">
-                {isUserLoading ? null : user ? (
-                  <>
-                    <Button asChild variant="ghost">
-                        <Link href="/">Customer View</Link>
-                    </Button>
-                    <Button asChild variant="ghost">
-                        <Link href="/owner">Owner View</Link>
-                    </Button>
+                <Button asChild variant="ghost">
+                    <Link href="/">Customer View</Link>
+                </Button>
+                <Button asChild>
+                    <Link href="/owner">Owner View</Link>
+                </Button>
+                 {isUserLoading ? null : user ? (
                     <form action={logoutAction}>
                       <LogoutButton />
                     </form>
-                  </>
-                ) : (
-                  <>
-                    <Button asChild variant="ghost">
-                        <Link href="/">Customer View</Link>
-                    </Button>
-                    <Button asChild>
-                        <Link href="/login">Owner Login</Link>
-                    </Button>
-                  </>
-                )}
+                ) : null}
             </nav>
         </div>
       </div>
