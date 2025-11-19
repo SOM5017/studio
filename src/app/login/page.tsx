@@ -21,7 +21,7 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
-    const [state, formAction] = useFormState(loginAction, { error: undefined, success: false });
+    const [state, formAction] = useFormState(loginAction, { error: undefined });
     const { user, isUserLoading } = useUser();
     const router = useRouter();
 
@@ -29,10 +29,7 @@ export default function LoginPage() {
         if (!isUserLoading && user) {
             router.push('/owner');
         }
-        if (state?.success) {
-            router.push('/owner');
-        }
-    }, [user, isUserLoading, router, state?.success]);
+    }, [user, isUserLoading, router]);
 
 
     if (isUserLoading || user) {

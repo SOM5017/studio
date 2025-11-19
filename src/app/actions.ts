@@ -36,12 +36,11 @@ export async function loginAction(prevState: any, formData: FormData) {
     // before redirecting.
     try {
         await signInWithEmailAndPassword(auth, email, password);
-    } catch (e) {
+        redirect('/owner');
+    } catch (e: any) {
         // This should not fail if the previous block succeeded, but handle just in case.
         return { error: "Login failed after user setup. Please try again."};
     }
-    
-    return { success: true };
 }
 
 export async function logoutAction() {
