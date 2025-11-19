@@ -14,8 +14,8 @@ import { Loader2 } from 'lucide-react';
 export default function LoginPage() {
     const { auth } = useFirebase();
     const router = useRouter();
-    const [email, setEmail] = useState('owner@example.com');
-    const [password, setPassword] = useState('password');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isLoggingIn, setIsLoggingIn] = useState(false);
