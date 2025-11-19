@@ -18,7 +18,7 @@ export default function OwnerPage() {
         }
     }, [user, isUserLoading, router]);
 
-    // While we're checking for the user, show a loading state.
+    // While we're checking for the user, or if there is no user yet, show a loading state.
     if (isUserLoading || !user) {
         return (
             <div className="flex h-full w-full flex-col items-center justify-center">

@@ -53,6 +53,6 @@ export async function loginAction(previousState: any, formData: FormData) {
 }
 
 export async function logoutAction() {
-    await auth.signOut();
+    await getAuth(firebaseApp).signOut();
     redirect('/');
 }

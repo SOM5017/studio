@@ -53,9 +53,11 @@ export default function Header() {
                     </form>
                   </>
                 ) : (
-                  <Button asChild>
-                    <Link href="/login">Owner Login</Link>
-                  </Button>
+                  pathname !== '/login' && (
+                    <Button asChild>
+                      <Link href="/login">Owner Login</Link>
+                    </Button>
+                  )
                 )}
             </nav>
         </div>
