@@ -14,8 +14,8 @@ import { Loader2 } from 'lucide-react';
 export default function LoginPage() {
     const { auth } = useFirebase();
     const router = useRouter();
-    const [email, setEmail] = useState('admin@example.com');
-    const [password, setPassword] = useState('admin');
+    const [email, setEmail] = useState('admin123@example.com');
+    const [password, setPassword] = useState('admin123');
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true); // Start with loading true to check auth state
     const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -44,7 +44,7 @@ export default function LoginPage() {
         }
 
         // Basic check for hardcoded username and password
-        if (email.split('@')[0] !== 'admin' || password !== 'admin') {
+        if (email.split('@')[0] !== 'admin123' || password !== 'admin123') {
             setError("Invalid credentials. Please try again.");
             return;
         }
@@ -90,7 +90,7 @@ export default function LoginPage() {
                             <Input
                                 id="email"
                                 type="text"
-                                placeholder="admin"
+                                placeholder="admin123"
                                 value={email.split('@')[0]}
                                 onChange={(e) => setEmail(`${e.target.value}@example.com`)}
                                 required
