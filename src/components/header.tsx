@@ -3,27 +3,8 @@
 import Link from 'next/link';
 import { AppIcon } from '@/components/icons';
 import { Button } from './ui/button';
-import { useAuth } from '@/firebase';
-import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 export default function Header() {
-  const auth = useAuth();
-  const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
-  }, [auth]);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -46,13 +27,9 @@ export default function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
             <nav className="flex items-center space-x-2">
-              {user ? (
-                 <Button onClick={handleLogout} variant="ghost">Logout</Button>
-              ) : (
-                <Button asChild>
-                  <Link href="/login">Owner View</Link>
-                </Button>
-              )}
+              <Button asChild>
+                <Link href="/owner">Owner View</Link>
+              </Button>
             </nav>
         </div>
       </div>
