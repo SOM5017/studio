@@ -41,7 +41,7 @@ export async function loginAction(prevState: any, formData: FormData) {
         return { error: "Login failed after user setup. Please try again."};
     }
     
-    redirect('/owner');
+    return { success: true };
 }
 
 export async function logoutAction() {
