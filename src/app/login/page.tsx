@@ -90,7 +90,6 @@ export default function LoginPage() {
                             <Input
                                 id="email"
                                 type="text"
-                                placeholder="owner"
                                 value={email.split('@')[0]}
                                 onChange={(e) => setEmail(`${e.target.value}@example.com`)}
                                 required
