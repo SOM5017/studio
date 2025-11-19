@@ -43,12 +43,6 @@ export default function LoginPage() {
             return;
         }
 
-        // Basic check for hardcoded username and password
-        if (email.split('@')[0] !== 'admin123' || password !== 'admin123') {
-            setError("Invalid credentials. Please try again.");
-            return;
-        }
-
         setIsLoggingIn(true);
         setError(null);
 
