@@ -13,26 +13,37 @@ const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 
 export async function loginAction(prevState: any, formData: FormData) {
-    const email = formData.get('username') as string + '@bookease.app'; // Use a dummy domain
+    const username = formData.get('username') as string;
     const password = formData.get('password') as string;
+    const adminEmail = 'admin@bookease.app';
+    const adminPassword = 'admin';
+
+    if (username !== 'admin' || password !== 'admin') {
+        return { error: "Invalid username or password." };
+    }
 
     try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
             try {
-                // If user doesn't exist, create it with the admin credentials.
-                await createUserWithEmailAndPassword(auth, email, password);
+                // If the admin user doesn't exist, create it.
+                await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+                // After creation, we need to sign in again to establish a session before redirecting
+                await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
             } catch (creationError: any) {
-                return { error: creationError.message };
+                // This might happen if there's a race condition or other issue.
+                return { error: `Could not create admin user: ${creationError.message}` };
             }
         } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
              return { error: "Invalid username or password." };
         } else {
+            // For other unexpected errors
             return { error: error.message };
         }
     }
-    // After a successful initial login or creation, redirect to the owner page.
+    
+    // On successful login or creation/login, redirect to the owner page.
     redirect('/owner');
 }
 
