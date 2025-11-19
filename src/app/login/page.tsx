@@ -68,7 +68,7 @@ export default function LoginPage() {
                   name="username"
                   type="text"
                   required
-                  defaultValue="admin"
+                  defaultValue="admin123"
                 />
               </div>
 
@@ -79,7 +79,7 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   required
-                  defaultValue="admin"
+                  defaultValue="admin123"
                 />
               </div>
 
