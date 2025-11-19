@@ -27,13 +27,13 @@ export default function LoginPage() {
 
     useEffect(() => {
         // If the user is already logged in, redirect them away from the login page.
+        // This is for users who navigate to /login directly.
         if (!isUserLoading && user) {
             router.replace('/owner');
         }
     }, [user, isUserLoading, router]);
 
-
-    // While we check for the user or if they exist, show a loading spinner.
+    // While we check for the user's auth state, or if they are already logged in, show a loader.
     if (isUserLoading || user) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -62,7 +62,6 @@ export default function LoginPage() {
                                 type="text"
                                 placeholder="admin"
                                 required
-                                defaultValue="admin"
                             />
                         </div>
                         <div className="space-y-2">
@@ -73,7 +72,6 @@ export default function LoginPage() {
                                 type="password"
                                 placeholder="admin"
                                 required
-                                defaultValue="admin"
                             />
                         </div>
                          {state?.error && (
