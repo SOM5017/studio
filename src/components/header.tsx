@@ -4,22 +4,36 @@ import Link from 'next/link';
 import { AppIcon } from '@/components/icons';
 import { Button } from './ui/button';
 import { useFirebase } from '@/firebase';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { logoutAction } from '@/app/actions';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 export default function Header() {
   const { auth } = useFirebase();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   useEffect(() => {
-    if (!auth) return;
+    if (!auth) {
+      setIsLoading(false);
+      return;
+    };
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setIsLoading(false);
     });
     return () => unsubscribe();
   }, [auth]);
+
+  const handleLogout = async () => {
+    if (!auth) return;
+    try {
+      await signOut(auth);
+      router.push('/');
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -45,9 +59,7 @@ export default function Header() {
               {isLoading ? (
                 <div className="h-10 w-24 animate-pulse rounded-md bg-muted" />
               ) : user ? (
-                <form action={logoutAction}>
-                    <Button variant="outline" type="submit">Logout</Button>
-                </form>
+                <Button variant="outline" onClick={handleLogout}>Logout</Button>
               ) : (
                 <Button asChild>
                   <Link href="/login">Owner View</Link>
