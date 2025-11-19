@@ -1,5 +1,7 @@
 'use server';
 
+export const runtime = 'nodejs';
+
 import {genkit} from 'genkit';
 import {googleAI} from '@genkit-ai/google-genai';
 import createGenkitHandler from '@genkit-ai/next';
