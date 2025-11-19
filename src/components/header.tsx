@@ -4,23 +4,9 @@
 import Link from 'next/link';
 import { AppIcon } from '@/components/icons';
 import { Button } from './ui/button';
-import { logoutAction } from '@/app/actions';
-import { useUser } from '@/firebase';
-import { useFormStatus } from 'react-dom';
 import { usePathname } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
-
-function LogoutButton() {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" variant="ghost" disabled={pending}>
-      {pending ? <Loader2 className="animate-spin" /> : "Logout"}
-    </Button>
-  );
-}
 
 export default function Header() {
-  const { user, isUserLoading } = useUser();
   const pathname = usePathname();
 
   return (
@@ -41,28 +27,10 @@ export default function Header() {
                       <Link href="/">Customer View</Link>
                   </Button>
                 )}
-                
-                {isUserLoading ? (
-                    <div className="w-20 flex justify-center">
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
-                ) : user ? (
-                  <>
-                    {pathname !== '/owner' && (
-                        <Button asChild>
-                            <Link href="/owner">Owner View</Link>
-                        </Button>
-                    )}
-                    <form action={logoutAction}>
-                      <LogoutButton />
-                    </form>
-                  </>
-                ) : (
-                  pathname !== '/login' && (
+                {pathname !== '/owner' && (
                     <Button asChild>
-                      <Link href="/login">Owner Login</Link>
+                        <Link href="/owner">Owner View</Link>
                     </Button>
-                  )
                 )}
             </nav>
         </div>
