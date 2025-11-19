@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, FormEvent } from 'react';
@@ -42,8 +43,8 @@ export default function LoginPage() {
             return;
         }
 
-        // Basic check for hardcoded username
-        if (email.split('@')[0] !== 'admin') {
+        // Basic check for hardcoded username and password
+        if (email.split('@')[0] !== 'admin' || password !== 'admin') {
             setError("Invalid credentials. Please try again.");
             return;
         }
@@ -55,12 +56,8 @@ export default function LoginPage() {
             await signInWithEmailAndPassword(auth, email, password);
             // The onAuthStateChanged listener will handle the redirect
         } catch (error: any) {
-            if (error.code === 'auth/user-not-found') {
-                setError("No user found with this email. Please contact support.");
-            } else if (error.code === 'auth/wrong-password') {
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
                 setError("Invalid credentials. Please try again.");
-            } else if (error.code === 'auth/invalid-credential') {
-                 setError("Invalid credentials. Please try again.");
             }
             else {
                 setError("An unexpected error occurred. Please try again later.");
