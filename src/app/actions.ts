@@ -11,30 +11,27 @@ const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 
 export async function loginAction(prevState: any, formData: FormData) {
-    const username = formData.get('username') as string;
+    const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    if (username !== 'admin' || password !== 'admin') {
-        return { error: "Invalid username or password." };
+    if (!email || !password) {
+        return { error: "Email and password are required." };
     }
 
-    const adminEmail = 'admin@bookease.app';
-    const adminPassword = 'admin';
-
     try {
-        await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+        await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
+            // If the user doesn't exist, create it. This makes the first login the registration.
             try {
-                // If the admin user doesn't exist, create it.
-                await createUserWithEmailAndPassword(auth, adminEmail, adminPassword);
+                await createUserWithEmailAndPassword(auth, email, password);
                 // After creation, sign in again to establish a session.
-                await signInWithEmailAndPassword(auth, adminEmail, adminPassword);
+                await signInWithEmailAndPassword(auth, email, password);
             } catch (creationError: any) {
-                return { error: `Could not create admin user: ${creationError.message}` };
+                return { error: `Could not create user: ${creationError.message}` };
             }
         } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-             return { error: "Invalid username or password." };
+             return { error: "Invalid email or password." };
         } else {
             return { error: `An unexpected error occurred: ${error.message}` };
         }

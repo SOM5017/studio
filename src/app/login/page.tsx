@@ -27,7 +27,6 @@ export default function LoginPage() {
 
     useEffect(() => {
         // If the user is already logged in, redirect them away from the login page.
-        // This is for users who navigate to /login directly.
         if (!isUserLoading && user) {
             router.replace('/owner');
         }
@@ -55,12 +54,12 @@ export default function LoginPage() {
                 <form action={formAction}>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="username">Username</Label>
+                            <Label htmlFor="email">Email</Label>
                             <Input
-                                id="username"
-                                name="username"
-                                type="text"
-                                placeholder="admin"
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="admin@bookease.app"
                                 required
                             />
                         </div>
