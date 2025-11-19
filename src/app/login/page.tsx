@@ -1,6 +1,5 @@
 
 "use client";
-import * as React from 'react';
 import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { loginAction } from '@/app/actions';
@@ -27,12 +26,14 @@ export default function LoginPage() {
     const router = useRouter();
 
     useEffect(() => {
+        // If the user is already logged in, redirect them away from the login page.
         if (!isUserLoading && user) {
-            router.push('/owner');
+            router.replace('/owner');
         }
     }, [user, isUserLoading, router]);
 
 
+    // While we check for the user or if they exist, show a loading spinner.
     if (isUserLoading || user) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -41,6 +42,7 @@ export default function LoginPage() {
         )
     }
 
+    // If the user is not logged in, show the login form.
     return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">
             <Card className="w-full max-w-sm">
