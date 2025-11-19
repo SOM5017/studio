@@ -1,9 +1,25 @@
-
+'use client';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { AppIcon } from '@/components/icons';
 import { Button } from './ui/button';
+import { useFirebase } from '@/firebase';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { logoutAction } from '@/app/actions';
 
 export default function Header() {
+  const { auth } = useFirebase();
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
+      setIsLoading(false);
+    });
+    return () => unsubscribe();
+  }, [auth]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -26,9 +42,17 @@ export default function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
             <nav className="flex items-center space-x-2">
-              <Button asChild>
-                <Link href="/owner">Owner View</Link>
-              </Button>
+              {isLoading ? (
+                <div className="h-10 w-24 animate-pulse rounded-md bg-muted" />
+              ) : user ? (
+                <form action={logoutAction}>
+                    <Button variant="outline" type="submit">Logout</Button>
+                </form>
+              ) : (
+                <Button asChild>
+                  <Link href="/login">Owner View</Link>
+                </Button>
+              )}
             </nav>
         </div>
       </div>
