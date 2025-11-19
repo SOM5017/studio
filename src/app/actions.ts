@@ -32,10 +32,12 @@ export async function loginAction(previousState: any, formData: FormData) {
     // Try to sign in first
     await signInWithEmailAndPassword(auth, adminEmail, password);
   } catch (e: any) {
-    // If the user doesn't exist, create it and sign in
+    // If the user doesn't exist, create it...
     if (e.code === 'auth/user-not-found') {
       try {
         await createUserWithEmailAndPassword(auth, adminEmail, password);
+        // ...and then sign in again immediately after creation.
+        await signInWithEmailAndPassword(auth, adminEmail, password);
       } catch (createError: any) {
         return {
           message: `Failed to create admin user: ${createError.message}`,
