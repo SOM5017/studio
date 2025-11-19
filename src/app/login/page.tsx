@@ -28,13 +28,14 @@ export default function LoginPage() {
   const router = useRouter();
 
   useEffect(() => {
-    // If user is already logged in, redirect them to the owner dashboard.
+    // If user check is done and we have a user, redirect them to the owner dashboard.
     if (!isUserLoading && user) {
       router.replace('/owner');
     }
   }, [user, isUserLoading, router]);
 
-  // While checking for user or if user is found, show loading to prevent flashing the login form.
+  // While checking for user auth state, or if the user is found (and we are about to redirect), show a loading screen.
+  // This prevents the login form from flashing on the screen for an already logged-in user.
   if (isUserLoading || user) {
      return (
         <div className="flex h-full w-full flex-col items-center justify-center">
@@ -44,6 +45,7 @@ export default function LoginPage() {
     );
   }
 
+  // Only show the login form if the loading is complete and there is no user.
   return (
     <div className="flex min-h-full flex-1 flex-col justify-center px-6 py-12 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-sm">

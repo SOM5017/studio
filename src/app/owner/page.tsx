@@ -12,14 +12,14 @@ export default function OwnerPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // If the user check is complete and there's no user, redirect to login.
+        // Only perform redirection after the initial user loading is complete.
         if (!isUserLoading && !user) {
-            router.push('/login');
+            router.replace('/login');
         }
     }, [user, isUserLoading, router]);
 
-    // While we're checking for the user, or if there is no user yet, show a loading state.
-    if (isUserLoading || !user) {
+    // Show loading indicator while Firebase is checking the auth state.
+    if (isUserLoading) {
         return (
             <div className="flex h-full w-full flex-col items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -27,12 +27,23 @@ export default function OwnerPage() {
             </div>
         );
     }
+
+    // If loading is complete and we have a user, show the dashboard.
+    // If there's no user, this will be null for a moment before the useEffect redirects.
+    if (user) {
+        return (
+            <div className="container mx-auto p-4 md:p-8">
+                <h1 className="text-3xl font-bold mb-6">Welcome, Admin!</h1>
+                <OwnerDashboard />
+            </div>
+        );
+    }
     
-    // If we have a user, show the dashboard.
+    // Fallback for the brief moment before redirection occurs.
     return (
-        <div className="container mx-auto p-4 md:p-8">
-            <h1 className="text-3xl font-bold mb-6">Welcome, Admin!</h1>
-            <OwnerDashboard />
+        <div className="flex h-full w-full flex-col items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="mt-4 text-muted-foreground">Redirecting...</p>
         </div>
     );
 }
