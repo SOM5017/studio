@@ -13,7 +13,6 @@ export default function OwnerPage() {
 
     useEffect(() => {
         // This effect runs only when the loading state is finished.
-        // It prevents any redirection logic from running while Firebase is still checking auth.
         if (!isUserLoading && !user) {
             router.replace('/login');
         }
@@ -25,7 +24,7 @@ export default function OwnerPage() {
         return (
             <div className="flex h-full w-full flex-col items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
+                <p className="mt-4 text-muted-foreground">Verifying session...</p>
             </div>
         );
     }
