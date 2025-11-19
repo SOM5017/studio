@@ -12,29 +12,7 @@ const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 const db = getFirestore(firebaseApp);
 
-async function ensureAdminUserExists() {
-    const adminRef = doc(db, "admins", "admin");
-    const adminQuery = query(collection(db, "admins"), where("username", "==", "admin"));
-    const querySnapshot = await getDocs(adminQuery);
-    
-    if (querySnapshot.empty) {
-        console.log("Admin user document not found in Firestore, creating it...");
-        try {
-            await setDoc(adminRef, {
-                username: "admin",
-                email: "admin@bookease.app"
-            });
-            console.log("Admin user document created in Firestore.");
-        } catch (error) {
-            console.error("Error creating admin user document in Firestore:", error);
-        }
-    }
-}
-
-
 export async function loginAction(previousState: any, formData: FormData) {
-  await ensureAdminUserExists();
-
   const username = formData.get('username') as string;
   const password = formData.get('password') as string;
 
@@ -44,50 +22,47 @@ export async function loginAction(previousState: any, formData: FormData) {
   
   const adminQuery = query(collection(db, "admins"), where("username", "==", username));
   
-  let adminEmail: string | null = null;
-  
+  let adminEmail: string | null = "admin@bookease.app"; // Hardcode the target email
+
   try {
       const querySnapshot = await getDocs(adminQuery);
+
+      // If the admin document doesn't exist in Firestore, create it.
       if (querySnapshot.empty) {
-          return { message: 'Invalid username or password.' };
+          console.log("Admin user document not found in Firestore, creating it...");
+          const adminRef = doc(db, "admins", "admin");
+          await setDoc(adminRef, {
+              username: "admin",
+              email: adminEmail
+          });
+          console.log("Admin user document created in Firestore.");
       }
-      
-      const adminData = querySnapshot.docs[0].data();
-      adminEmail = adminData.email;
+
+      // Now, attempt to sign in with Firebase Auth.
+      try {
+        await signInWithEmailAndPassword(auth, adminEmail, password);
+      } catch (e: any) {
+        // If the Firebase Auth user doesn't exist, create it and sign in again.
+        if (e.code === 'auth/user-not-found') {
+          await createUserWithEmailAndPassword(auth, adminEmail, password);
+          await signInWithEmailAndPassword(auth, adminEmail, password);
+        } else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
+            return { message: 'Invalid username or password.' };
+        } else {
+            // Other auth error
+            return { message: `An unexpected error occurred: ${e.message}` };
+        }
+      }
 
   } catch (error) {
-      console.error("Error querying Firestore for admin:", error);
+      console.error("Error during login action:", error);
       return { message: 'An error occurred while trying to log in.' };
   }
 
-  if (!adminEmail) {
-    return { message: 'Invalid username or password.' };
-  }
-
-
-  try {
-    await signInWithEmailAndPassword(auth, adminEmail, password);
-  } catch (e: any) {
-    if (e.code === 'auth/user-not-found') {
-      try {
-        await createUserWithEmailAndPassword(auth, adminEmail, password);
-        await signInWithEmailAndPassword(auth, adminEmail, password);
-      } catch (createError: any) {
-        return {
-          message: `Failed to create admin user: ${createError.message}`,
-        };
-      }
-    } else if (e.code === 'auth/wrong-password' || e.code === 'auth/invalid-credential') {
-        return { message: 'Invalid username or password.' };
-    } else {
-      return {
-        message: `An unexpected error occurred: ${e.message}`,
-      };
-    }
-  }
-
+  // If all is successful, redirect.
   redirect('/owner');
 }
+
 
 export async function logoutAction() {
     await getAuth(firebaseApp).signOut();
