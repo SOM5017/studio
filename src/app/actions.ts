@@ -11,12 +11,15 @@ const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
 
 export async function loginAction(prevState: any, formData: FormData) {
-    const email = formData.get('email') as string;
+    const username = formData.get('username') as string;
     const password = formData.get('password') as string;
 
-    if (!email || !password) {
-        return { error: "Email and password are required." };
+    if (!username || !password) {
+        return { error: "Username and password are required." };
     }
+
+    // Convert username to an email format for Firebase Auth
+    const email = `${username.toLowerCase()}@bookease.app`;
 
     try {
         await signInWithEmailAndPassword(auth, email, password);
@@ -31,7 +34,7 @@ export async function loginAction(prevState: any, formData: FormData) {
                 return { error: `Could not create user: ${creationError.message}` };
             }
         } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-             return { error: "Invalid email or password." };
+             return { error: "Invalid username or password." };
         } else {
             return { error: `An unexpected error occurred: ${error.message}` };
         }
