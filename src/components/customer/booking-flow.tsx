@@ -16,12 +16,16 @@ import Image from 'next/image';
 import { Loader2, PartyPopper } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { useRouter } from 'next/navigation';
-import { subscribe, addBooking } from '@/lib/data';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { addBooking, getBookingsCollection } from '@/lib/data';
+import { v4 as uuidv4 } from 'uuid';
+
 
 export default function BookingFlow() {
-  const [bookings, setBookings] = React.useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-  
+  const firestore = useFirestore();
+  const bookingsCollection = useMemoFirebase(() => firestore ? getBookingsCollection(firestore) : null, [firestore]);
+  const { data: bookings, isLoading } = useCollection<Booking>(bookingsCollection);
+
   const [range, setRange] = React.useState<DateRange | undefined>();
   const [isFormOpen, setFormOpen] = React.useState(false);
   const [isConfirmationOpen, setConfirmationOpen] = React.useState(false);
@@ -32,18 +36,9 @@ export default function BookingFlow() {
   const router = useRouter();
 
   React.useEffect(() => {
-    const unsubscribe = subscribe((newBookings) => {
-        setBookings(newBookings);
-        setIsLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-  
-  React.useEffect(() => {
     const today = new Date();
     
-    const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+    const confirmedBookings = bookings?.filter(b => b.status === 'confirmed') ?? [];
 
     const unavailableDates = confirmedBookings.reduce((acc: Date[], booking) => {
       const a = booking.startDate;
@@ -64,10 +59,10 @@ export default function BookingFlow() {
   }, [bookings]);
 
   const handleBookingSubmit = (values: BookingFormValues) => {
-    if (!range?.from || !range?.to) return;
+    if (!range?.from || !range?.to || !firestore) return;
     setIsSubmitting(true);
     try {
-      const newBookingData: Omit<Booking, 'id'> = {
+      const newBookingData: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'> = {
         ...values,
         startDate: range.from.toISOString(),
         endDate: range.to.toISOString(),
@@ -76,9 +71,14 @@ export default function BookingFlow() {
         fraudulentReason: '',
       };
       
-      const createdBooking = addBooking(newBookingData);
+      addBooking(firestore, newBookingData);
+      
+      const createdBookingForDialog = {
+        ...newBookingData,
+        id: uuidv4(), // Temporary ID for display
+      }
+      setNewBooking(createdBookingForDialog);
 
-      setNewBooking(createdBooking);
       setFormOpen(false);
       setConfirmationOpen(true);
       router.refresh();
@@ -115,7 +115,7 @@ export default function BookingFlow() {
           </div>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-6">
-          {isLoading ? (
+          {isLoading || !bookings ? (
             <div className="rounded-md border p-3">
               <div className="h-[298px] w-[280px] animate-pulse rounded-md bg-muted" />
             </div>
@@ -137,7 +137,7 @@ export default function BookingFlow() {
             size="lg"
             className="w-full sm:w-auto"
           >
-            Book Now
+            {isSubmitting ? <Loader2 className="animate-spin" /> : 'Book Now'}
           </Button>
         </CardContent>
       </Card>

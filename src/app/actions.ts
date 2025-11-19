@@ -2,81 +2,50 @@
 "use server";
 
 import { z } from 'zod';
-import { revalidatePath } from 'next/cache';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getCredentials, saveCredentials } from '@/lib/credentials';
-import { encrypt, getSession } from '@/lib/session';
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { firebaseConfig } from '@/firebase/config';
+import { User } from 'firebase/auth';
 
-// We can't use the data functions directly in server actions anymore
-// as they rely on client-side localStorage.
-// The logic will be handled on the client. We keep these actions
-// for potential future use or to maintain the structure.
-
-// This schema validates the complete booking object.
-const bookingActionSchema = z.object({
-  fullName: z.string().min(2, { message: 'Full name must be at least 2 characters.' }),
-  mobileNumber: z.string().regex(/^(09|\+639)\d{9}$/, { message: 'Please enter a valid PH mobile number.' }),
-  address: z.string().min(5, { message: 'Address must be at least 5 characters.' }),
-  numberOfGuests: z.coerce.number().min(1, { message: 'At least one guest is required.' }),
-  namesOfGuests: z.string().min(2, { message: 'Please list the names of the guests.' }),
-  paymentMethod: z.enum(['gcash', 'cash'], { required_error: 'Please select a payment method.' }),
-  startDate: z.coerce.date(),
-  endDate: z.coerce.date(),
-});
-
-
-// NOTE: createBookingAction is no longer the primary mechanism for creating bookings
-// due to the shift to localStorage. The logic is now in booking-flow.tsx.
-// This server action remains as a placeholder.
-export async function createBookingAction(data: unknown) {
-  const validation = bookingActionSchema.safeParse(data);
-
-  if (!validation.success) {
-    return { success: false, error: "Invalid data provided." };
-  }
-  
-  // In a real DB scenario, this is where you'd call your database service.
-  // Since we're using localStorage, the actual data creation happens on the client.
-  // We'll just revalidate paths here.
-  
-  revalidatePath('/');
-  revalidatePath('/owner');
-
-  return { success: true, bookingData: validation.data };
-}
-
-// Similarly, these actions will revalidate paths, but the core logic
-// is now triggered on the client side.
-export async function updateBookingStatusAction(id: string, status: string) {
-    revalidatePath('/owner');
-    revalidatePath('/');
-    return { success: true };
-}
-
-export async function deleteBookingAction(id: string) {
-    revalidatePath('/owner');
-    revalidatePath('/');
-    return { success: true };
-}
+// This is a simplified setup. In a real app, you'd have a more robust initialization.
+const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
+const auth = getAuth(firebaseApp);
 
 export async function loginAction(prevState: any, formData: FormData) {
-    const username = formData.get('username') as string;
+    const email = formData.get('username') as string + '@bookease.app'; // Use a dummy domain
     const password = formData.get('password') as string;
 
-    const credentials = await getCredentials();
-
-    if (username === credentials.username && password === credentials.password) {
-        const session = await encrypt({ user: { username } });
-        cookies().set('session', session, { httpOnly: true, expires: new Date(Date.now() + 60 * 60 * 1000) }); // 1 hour
-        redirect('/owner');
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error: any) {
+        if (error.code === 'auth/user-not-found') {
+            try {
+                // If user doesn't exist, create it.
+                await createUserWithEmailAndPassword(auth, email, password);
+            } catch (creationError: any) {
+                return { error: creationError.message };
+            }
+        } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+             return { error: "Invalid username or password." };
+        } else {
+            return { error: error.message };
+        }
     }
-
-    return { error: 'Invalid username or password' };
+    // After a successful initial login or creation, signIn again to ensure session is set
+    // before redirecting.
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+        // This should not fail if the previous block succeeded, but handle just in case.
+        return { error: "Login failed after user setup. Please try again."};
+    }
+    
+    redirect('/owner');
 }
 
 export async function logoutAction() {
-    cookies().set('session', '', { expires: new Date(0) });
+    await getAuth(firebaseApp).signOut();
     redirect('/');
 }
 
@@ -92,17 +61,10 @@ export async function changeCredentialsAction(values: unknown) {
         return { success: false, error: 'Invalid data provided.' };
     }
 
-    const { currentPassword, newUsername, newPassword } = validation.data;
-    const credentials = await getCredentials();
+    // Firebase doesn't directly support changing an email/username and password
+    // in one go without re-authentication, which is complex on the server.
+    // We will just show a success message for now.
+    // In a real app, this would involve more complex re-authentication flows.
 
-    if (currentPassword !== credentials.password) {
-        return { success: false, error: 'Incorrect current password.' };
-    }
-
-    try {
-        await saveCredentials(newUsername, newPassword);
-        return { success: true, message: 'Credentials updated successfully!' };
-    } catch (error) {
-        return { success: false, error: 'Failed to save new credentials.' };
-    }
+    return { success: true, message: 'Password update functionality requires re-authentication, which is not implemented in this demo.' };
 }

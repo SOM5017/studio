@@ -1,12 +1,24 @@
 
+'use client';
+
 import Link from 'next/link';
 import { AppIcon } from '@/components/icons';
 import { Button } from './ui/button';
 import { logoutAction } from '@/app/actions';
-import { getSession } from '@/lib/session';
+import { useUser } from '@/firebase';
+import { useFormStatus } from 'react-dom';
 
-export default async function Header() {
-  const session = await getSession();
+function LogoutButton() {
+  const { pending } = useFormStatus();
+  return (
+    <Button type="submit" variant="ghost" disabled={pending}>
+      {pending ? "Logging out..." : "Logout"}
+    </Button>
+  );
+}
+
+export default function Header() {
+  const { user, isUserLoading } = useUser();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -21,7 +33,7 @@ export default async function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-2">
             <nav className="flex items-center space-x-2">
-                {session ? (
+                {isUserLoading ? null : user ? (
                   <>
                     <Button asChild variant="ghost">
                         <Link href="/">Customer View</Link>
@@ -30,7 +42,7 @@ export default async function Header() {
                         <Link href="/owner">Owner View</Link>
                     </Button>
                     <form action={logoutAction}>
-                      <Button type="submit" variant="ghost">Logout</Button>
+                      <LogoutButton />
                     </form>
                   </>
                 ) : (

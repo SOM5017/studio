@@ -1,14 +1,15 @@
 
 "use client";
 import * as React from 'react';
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useFormState, useFormStatus } from 'react-dom';
 import { loginAction } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2 } from 'lucide-react';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 function SubmitButton() {
     const { pending } = useFormStatus();
@@ -20,7 +21,23 @@ function SubmitButton() {
 }
 
 export default function LoginPage() {
-    const [state, formAction] = useActionState(loginAction, undefined);
+    const [state, formAction] = useFormState(loginAction, { error: undefined });
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
+
+    React.useEffect(() => {
+        if (!isUserLoading && user) {
+            router.push('/owner');
+        }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || user) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        )
+    }
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-background p-4">

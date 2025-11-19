@@ -1,94 +1,46 @@
-
-"use client";
+'use client';
 
 import { Booking } from '@/lib/types';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  collection,
+  doc,
+  Firestore,
+  serverTimestamp,
+} from 'firebase/firestore';
+import {
+  addDocumentNonBlocking,
+  updateDocumentNonBlocking,
+  deleteDocumentNonBlocking
+} from '@/firebase/non-blocking-updates';
 
-let bookings: Booking[] = [];
-type Listener = (bookings: Booking[]) => void;
-let listeners: Listener[] = [];
-
-// Helper function to get bookings from localStorage, only run once
-const getInitialBookings = (): Booking[] => {
-    if (typeof window === 'undefined') {
-        return [];
-    }
-    const stored = window.localStorage.getItem('bookings');
-    bookings = stored ? JSON.parse(stored) : [];
-    return bookings;
-};
-
-// Initialize bookings on script load in the browser
-if (typeof window !== 'undefined') {
-    getInitialBookings();
+export function getBookingsCollection(db: Firestore) {
+  return collection(db, 'bookings');
 }
 
-// Helper function to set bookings in localStorage and notify listeners
-const updateAndNotify = (newBookings: Booking[]): void => {
-    bookings = newBookings;
-    if (typeof window !== 'undefined') {
-        window.localStorage.setItem('bookings', JSON.stringify(bookings));
-    }
-    listeners.forEach(listener => listener(bookings));
-};
-
-export const subscribe = (listener: Listener): (() => void) => {
-    listeners.push(listener);
-    // Provide the initial data immediately
-    listener(bookings);
-    return () => {
-        listeners = listeners.filter(l => l !== listener);
-    };
-};
-
-export function getBookings(): Booking[] {
-    return bookings;
+export function getBookingDoc(db: Firestore, id: string) {
+    return doc(db, 'bookings', id);
 }
 
-export function addBooking(booking: Omit<Booking, 'id'>): Booking {
-    const newBooking: Booking = {
-        id: uuidv4(),
-        ...booking,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-    };
-    
-    const updatedBookings = [...bookings, newBooking];
-    updateAndNotify(updatedBookings);
-    
-    return newBooking;
+export function addBooking(db: Firestore, booking: Omit<Booking, 'id' | 'createdAt' | 'updatedAt'>) {
+  const bookingsCollection = getBookingsCollection(db);
+  const newBooking = {
+    ...booking,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  };
+  return addDocumentNonBlocking(bookingsCollection, newBooking);
 }
 
-export function updateBooking(id: string, updatedBooking: Partial<Booking>): Booking | null {
-    const bookingIndex = bookings.findIndex(b => b.id === id);
-
-    if (bookingIndex === -1) {
-        return null;
-    }
-
-    const originalBooking = bookings[bookingIndex];
-    const newBooking = {
-        ...originalBooking,
-        ...updatedBooking,
-        updatedAt: new Date().toISOString(),
-    };
-
-    const updatedBookings = [...bookings];
-    updatedBookings[bookingIndex] = newBooking;
-    updateAndNotify(updatedBookings);
-
-    return newBooking;
+export function updateBooking(db: Firestore, id: string, updatedBooking: Partial<Booking>) {
+  const bookingDoc = getBookingDoc(db, id);
+  const newBookingData = {
+    ...updatedBooking,
+    updatedAt: serverTimestamp(),
+  };
+  updateDocumentNonBlocking(bookingDoc, newBookingData);
 }
 
-export function deleteBooking(id: string): boolean {
-    const initialLength = bookings.length;
-    
-    const updatedBookings = bookings.filter(b => b.id !== id);
-    
-    if (updatedBookings.length < initialLength) {
-        updateAndNotify(updatedBookings);
-        return true;
-    }
-    
-    return false;
+export function deleteBooking(db: Firestore, id: string) {
+    const bookingDoc = getBookingDoc(db, id);
+    deleteDocumentNonBlocking(bookingDoc);
 }

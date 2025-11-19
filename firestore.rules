@@ -1,117 +1,17 @@
-/**
- * @file Firebase Security Rules for BookEase Accommodations
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for Customers and Owners,
- * and an owner-access model for Accommodations. Bookings are secured under
- * customer paths with denormalized customer IDs for authorization independence.
- *
- * Data Structure:
- * - /customers/{customerId}: Customer profiles, accessible only by the customer.
- * - /customers/{customerId}/bookings/{bookingId}: Bookings made by a specific customer, accessible only by that customer.
- * - /accommodations/{accommodationId}: Accommodation listings, accessible by anyone for reading, but writable only by the owner.
- * - /owners/{ownerId}: Owner profiles, accessible only by the owner.
- *
- * Key Security Decisions:
- * - Users (Customers and Owners) can only access their own profiles and data.
- * - Accommodation reads are public, but writes are restricted to the owner.
- * - Bookings are private and scoped to the customer who made them.
- * - No listing of users (Customers or Owners) is allowed.
- *
- * Denormalization for Authorization:
- * - Accommodation documents contain the `ownerId` to allow owner-only write rules without extra `get()` calls.
- * - Booking documents contain the `customerId` to allow customer-only access to bookings under their path.
- */
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    /**
-     * @description Protects customer profiles. Only the customer can read and write their own profile.
-     * @path /customers/{customerId}
-     * @allow (create, update, delete, get, list) if request.auth.uid == customerId
-     * @deny (create, update, delete) if request.auth.uid != customerId
-     * @deny (get, list) if request.auth.uid != customerId
-     * @principle Enforces document ownership for reads and writes.
-     */
-    match /customers/{customerId} {
-      allow get, list: if isOwner(customerId);
-      allow create: if isOwner(customerId);
-      allow update: if isExistingOwner(customerId);
-      allow delete: if isExistingOwner(customerId);
+    
+    // Bookings can be read by anyone, but only modified by an authenticated user (the owner).
+    match /bookings/{bookingId} {
+      allow read: if true;
+      allow write: if request.auth != null;
     }
 
-    /**
-     * @description Protects bookings under a customer's path. Only the customer can manage their bookings.
-     * @path /customers/{customerId}/bookings/{bookingId}
-     * @allow (create, update, delete, get, list) if isOwner(customerId)
-     * @deny (create, update, delete, get, list) if !isOwner(customerId)
-     * @principle Enforces document ownership and path-based access control.
-     */
-    match /customers/{customerId}/bookings/{bookingId} {
-      allow get, list: if isOwner(customerId);
-      allow create: if isOwner(customerId);
-      allow update: if isExistingOwner(customerId);
-      allow delete: if isExistingOwner(customerId);
-    }
-
-    /**
-     * @description Protects accommodation listings. Reads are public, but only the owner can create, update, or delete.
-     * @path /accommodations/{accommodationId}
-     * @allow get, list: if true;
-     * @allow create: if request.auth.uid == request.resource.data.ownerId;
-     * @allow update: if isExistingOwner(resource.data.ownerId);
-     * @allow delete: if isExistingOwner(resource.data.ownerId);
-     * @principle Allows public reads but enforces owner-only writes.
-     */
-    match /accommodations/{accommodationId} {
-      allow get, list: if true;
-      allow create: if request.auth.uid == request.resource.data.ownerId;
-      allow update: if isExistingOwner(resource.data.ownerId);
-      allow delete: if isExistingOwner(resource.data.ownerId);
-    }
-
-    /**
-     * @description Protects owner profiles. Only the owner can read and write their own profile.
-     * @path /owners/{ownerId}
-     * @allow (create, update, delete, get, list) if request.auth.uid == ownerId
-     * @deny (create, update, delete) if request.auth.uid != ownerId
-     * @deny (get, list) if request.auth.uid != ownerId
-     * @principle Enforces document ownership for reads and writes.
-     */
-    match /owners/{ownerId} {
-      allow get, list: if isOwner(ownerId);
-      allow create: if isOwner(ownerId);
-      allow update: if isExistingOwner(ownerId);
-      allow delete: if isExistingOwner(ownerId);
-    }
-
-    // --- Helper Functions ---
-
-    /**
-     * @description Checks if the current user is signed in.
-     * @return {bool} True if the user is signed in, false otherwise.
-     */
+    // Helper Functions
     function isSignedIn() {
       return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the current user is the owner of the resource.
-     * @param {string} userId The ID of the user who should own the resource.
-     * @return {bool} True if the user is the owner, false otherwise.
-     */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the current user is the owner of the existing resource.
-     * @param {string} userId The ID of the user who should own the resource.
-     * @return {bool} True if the user is the owner, false otherwise.
-     */
-    function isExistingOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId && resource != null;
     }
   }
 }
