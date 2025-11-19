@@ -4,7 +4,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { createSessionCookie, getAuth, signInWithEmailAndPassword, verifySessionCookie } from "./firebase/admin";
+import { createSessionCookie, getAuth, signInWithEmailAndPassword, verifySessionCookie } from "@/firebase/admin";
 
 
 export async function loginAction(
