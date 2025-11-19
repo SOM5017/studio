@@ -62,6 +62,7 @@ export default function LoginPage() {
                                 type="text"
                                 placeholder="admin"
                                 required
+                                defaultValue="admin"
                             />
                         </div>
                         <div className="space-y-2">
@@ -72,6 +73,7 @@ export default function LoginPage() {
                                 type="password"
                                 placeholder="admin"
                                 required
+                                defaultValue="admin"
                             />
                         </div>
                          {state?.error && (
